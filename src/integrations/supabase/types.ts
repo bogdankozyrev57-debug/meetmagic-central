@@ -14,13 +14,175 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      events: {
+        Row: {
+          address: string
+          capacity: number
+          category: string
+          cover_url: string | null
+          created_at: string
+          description: string
+          ends_at: string | null
+          id: string
+          is_published: boolean
+          lat: number | null
+          lng: number | null
+          organizer_id: string | null
+          price: number
+          starts_at: string
+          title: string
+          updated_at: string
+          venue_name: string
+        }
+        Insert: {
+          address?: string
+          capacity?: number
+          category?: string
+          cover_url?: string | null
+          created_at?: string
+          description?: string
+          ends_at?: string | null
+          id?: string
+          is_published?: boolean
+          lat?: number | null
+          lng?: number | null
+          organizer_id?: string | null
+          price?: number
+          starts_at: string
+          title: string
+          updated_at?: string
+          venue_name?: string
+        }
+        Update: {
+          address?: string
+          capacity?: number
+          category?: string
+          cover_url?: string | null
+          created_at?: string
+          description?: string
+          ends_at?: string | null
+          id?: string
+          is_published?: boolean
+          lat?: number | null
+          lng?: number | null
+          organizer_id?: string | null
+          price?: number
+          starts_at?: string
+          title?: string
+          updated_at?: string
+          venue_name?: string
+        }
+        Relationships: []
+      }
+      profiles: {
+        Row: {
+          avatar_url: string | null
+          created_at: string
+          full_name: string | null
+          id: string
+        }
+        Insert: {
+          avatar_url?: string | null
+          created_at?: string
+          full_name?: string | null
+          id: string
+        }
+        Update: {
+          avatar_url?: string | null
+          created_at?: string
+          full_name?: string | null
+          id?: string
+        }
+        Relationships: []
+      }
+      registrations: {
+        Row: {
+          checked_in_at: string | null
+          created_at: string
+          event_id: string
+          id: string
+          status: string
+          ticket_code: string
+          user_id: string
+        }
+        Insert: {
+          checked_in_at?: string | null
+          created_at?: string
+          event_id: string
+          id?: string
+          status?: string
+          ticket_code?: string
+          user_id: string
+        }
+        Update: {
+          checked_in_at?: string | null
+          created_at?: string
+          event_id?: string
+          id?: string
+          status?: string
+          ticket_code?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "registrations_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      reviews: {
+        Row: {
+          comment: string
+          created_at: string
+          event_id: string
+          id: string
+          rating: number
+          user_id: string
+        }
+        Insert: {
+          comment?: string
+          created_at?: string
+          event_id: string
+          id?: string
+          rating: number
+          user_id: string
+        }
+        Update: {
+          comment?: string
+          created_at?: string
+          event_id?: string
+          id?: string
+          rating?: number
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "reviews_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      check_in_ticket: {
+        Args: { _ticket_code: string }
+        Returns: {
+          already: boolean
+          attendee: string
+          checked_in_at: string
+          event_title: string
+          registration_id: string
+        }[]
+      }
     }
     Enums: {
       [_ in never]: never
