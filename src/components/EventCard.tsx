@@ -36,7 +36,9 @@ export function EventCard({ event, registered }: { event: EventRow; registered?:
         </p>
         <p className="flex items-center gap-2">
           <Users className="size-4 shrink-0 text-accent" />
-          {registered ?? 0} из {event.capacity} мест занято
+          {registered === undefined
+            ? `${event.capacity} мест`
+            : `${registered} из ${event.capacity} мест занято`}
         </p>
       </div>
     </Link>
