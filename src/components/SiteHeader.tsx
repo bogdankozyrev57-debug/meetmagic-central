@@ -24,6 +24,7 @@ export function SiteHeader() {
     { to: "/", label: "Мероприятия" },
     { to: "/tickets", label: "Мои билеты" },
     { to: "/organizer", label: "Организатору" },
+    { to: "/docs", label: "Документация" },
   ] as const;
 
   return (
