@@ -13,7 +13,9 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as DocsRouteImport } from './routes/docs'
+import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated/admin'
 import { Route as AuthenticatedOrganizerRouteImport } from './routes/_authenticated/organizer'
+import { Route as AuthenticatedProfileRouteImport } from './routes/_authenticated/profile'
 import { Route as AuthenticatedTicketsRouteImport } from './routes/_authenticated/tickets'
 import { Route as EventsIdRouteImport } from './routes/events.$id'
 import { Route as AuthenticatedOrganizerIdRouteImport } from './routes/_authenticated/organizer.$id'
@@ -37,9 +39,19 @@ const DocsRoute = DocsRouteImport.update({
   path: '/docs',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AuthenticatedAdminRoute = AuthenticatedAdminRouteImport.update({
+  id: '/admin',
+  path: '/admin',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedOrganizerRoute = AuthenticatedOrganizerRouteImport.update({
   id: '/organizer',
   path: '/organizer',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedProfileRoute = AuthenticatedProfileRouteImport.update({
+  id: '/profile',
+  path: '/profile',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AuthenticatedTicketsRoute = AuthenticatedTicketsRouteImport.update({
@@ -63,7 +75,9 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/docs': typeof DocsRoute
+  '/admin': typeof AuthenticatedAdminRoute
   '/organizer': typeof AuthenticatedOrganizerRouteWithChildren
+  '/profile': typeof AuthenticatedProfileRoute
   '/tickets': typeof AuthenticatedTicketsRoute
   '/events/$id': typeof EventsIdRoute
   '/organizer/$id': typeof AuthenticatedOrganizerIdRoute
@@ -72,7 +86,9 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/docs': typeof DocsRoute
+  '/admin': typeof AuthenticatedAdminRoute
   '/organizer': typeof AuthenticatedOrganizerRouteWithChildren
+  '/profile': typeof AuthenticatedProfileRoute
   '/tickets': typeof AuthenticatedTicketsRoute
   '/events/$id': typeof EventsIdRoute
   '/organizer/$id': typeof AuthenticatedOrganizerIdRoute
@@ -83,7 +99,9 @@ export interface FileRoutesById {
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
   '/auth': typeof AuthRoute
   '/docs': typeof DocsRoute
+  '/_authenticated/admin': typeof AuthenticatedAdminRoute
   '/_authenticated/organizer': typeof AuthenticatedOrganizerRouteWithChildren
+  '/_authenticated/profile': typeof AuthenticatedProfileRoute
   '/_authenticated/tickets': typeof AuthenticatedTicketsRoute
   '/events/$id': typeof EventsIdRoute
   '/_authenticated/organizer/$id': typeof AuthenticatedOrganizerIdRoute
@@ -94,7 +112,9 @@ export interface FileRouteTypes {
     | '/'
     | '/auth'
     | '/docs'
+    | '/admin'
     | '/organizer'
+    | '/profile'
     | '/tickets'
     | '/events/$id'
     | '/organizer/$id'
@@ -103,7 +123,9 @@ export interface FileRouteTypes {
     | '/'
     | '/auth'
     | '/docs'
+    | '/admin'
     | '/organizer'
+    | '/profile'
     | '/tickets'
     | '/events/$id'
     | '/organizer/$id'
@@ -113,7 +135,9 @@ export interface FileRouteTypes {
     | '/_authenticated'
     | '/auth'
     | '/docs'
+    | '/_authenticated/admin'
     | '/_authenticated/organizer'
+    | '/_authenticated/profile'
     | '/_authenticated/tickets'
     | '/events/$id'
     | '/_authenticated/organizer/$id'
@@ -157,11 +181,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DocsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/_authenticated/admin': {
+      id: '/_authenticated/admin'
+      path: '/admin'
+      fullPath: '/admin'
+      preLoaderRoute: typeof AuthenticatedAdminRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/organizer': {
       id: '/_authenticated/organizer'
       path: '/organizer'
       fullPath: '/organizer'
       preLoaderRoute: typeof AuthenticatedOrganizerRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/profile': {
+      id: '/_authenticated/profile'
+      path: '/profile'
+      fullPath: '/profile'
+      preLoaderRoute: typeof AuthenticatedProfileRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/tickets': {
@@ -203,12 +241,16 @@ const AuthenticatedOrganizerRouteWithChildren =
   )
 
 interface AuthenticatedRouteRouteChildren {
+  AuthenticatedAdminRoute: typeof AuthenticatedAdminRoute
   AuthenticatedOrganizerRoute: typeof AuthenticatedOrganizerRouteWithChildren
+  AuthenticatedProfileRoute: typeof AuthenticatedProfileRoute
   AuthenticatedTicketsRoute: typeof AuthenticatedTicketsRoute
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
+  AuthenticatedAdminRoute: AuthenticatedAdminRoute,
   AuthenticatedOrganizerRoute: AuthenticatedOrganizerRouteWithChildren,
+  AuthenticatedProfileRoute: AuthenticatedProfileRoute,
   AuthenticatedTicketsRoute: AuthenticatedTicketsRoute,
 }
 
