@@ -59,7 +59,7 @@ function ProfilePage() {
   async function save() {
     // Обновление разрешено только своей строки (политика profiles_update_own)
     const { error } = await supabase.from("profiles").update({ full_name: name.trim() }).eq("id", user!.id);
-    if (error) return toast.error("Не удалось сохранить");
+    if (error) { toast.error("Не удалось сохранить"); return; }
     toast.success("Профиль обновлён");
     queryClient.invalidateQueries({ queryKey: ["profile"] });
   }
