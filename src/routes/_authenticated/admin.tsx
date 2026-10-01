@@ -49,7 +49,7 @@ function AdminPage() {
   async function remove(id: string) {
     if (!confirm("Удалить мероприятие?")) return;
     const { error } = await supabase.from("events").delete().eq("id", id);
-    if (error) return toast.error("Нет прав или ошибка удаления");
+    if (error) { toast.error("Нет прав или ошибка удаления"); return; }
     toast.success("Удалено");
     queryClient.invalidateQueries({ queryKey: ["admin-events"] });
   }
