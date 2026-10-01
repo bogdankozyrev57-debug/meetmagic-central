@@ -6,13 +6,17 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth";
+import { useRole } from "@/lib/roles";
 
+/** Шапка сайта: роутинг между страницами, вход/выход, ссылка «Админ» только для роли admin. */
 export function SiteHeader() {
   const { user, loading } = useAuth();
+  const { isAdmin } = useRole();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [open, setOpen] = useState(false);
 
+  // Корректный выход: отмена запросов, очистка кэша, выход, переход без возврата «назад»
   async function handleSignOut() {
     await queryClient.cancelQueries();
     queryClient.clear();
@@ -20,12 +24,13 @@ export function SiteHeader() {
     navigate({ to: "/auth", replace: true });
   }
 
-  const links = [
+  const baseLinks = [
     { to: "/", label: "Мероприятия" },
     { to: "/tickets", label: "Мои билеты" },
     { to: "/organizer", label: "Организатору" },
     { to: "/docs", label: "Документация" },
   ] as const;
+  const links = isAdmin ? [...baseLinks, { to: "/admin", label: "Админ" } as const] : baseLinks;
 
   return (
     <header className="sticky top-0 z-40 border-b border-border/70 bg-background/85 backdrop-blur">
@@ -53,7 +58,7 @@ export function SiteHeader() {
           {!loading && user ? (
             <>
               <Button asChild variant="secondary" size="sm">
-                <Link to="/organizer">
+                <Link to="/profile">
                   <QrCode className="size-4" />
                   Кабинет
                 </Link>
