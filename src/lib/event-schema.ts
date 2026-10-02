@@ -21,7 +21,10 @@ export const eventFormSchema = z.object({
   is_published: z.boolean(),
 });
 
-export type EventFormValues = z.input<typeof eventFormSchema>;
+export type EventFormValues = Omit<z.input<typeof eventFormSchema>, "capacity" | "price"> & {
+  capacity: string;
+  price: string;
+};
 export type EventFormErrors = Partial<Record<keyof EventFormValues, string>>;
 
 /** Возвращает либо валидные данные, либо ошибки по полям */
