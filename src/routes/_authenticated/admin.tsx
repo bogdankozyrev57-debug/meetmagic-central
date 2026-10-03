@@ -215,13 +215,13 @@ function EditForm({ event, onClose, onSaved }: { event: AdminEvent; onClose: () 
   function validate() {
     const e: Record<string, string> = {};
     const t = form.title.trim();
-    if (t.length < 3 || t.length > 120) e.title = "Название: от 3 до 120 символов";
+    if (t.length < 3 || t.length > 120) e["title"] = "Название: от 3 до 120 символов";
     const cap = Number(form.capacity);
-    if (!Number.isInteger(cap) || cap < 1 || cap > 100000) e.capacity = "Вместимость: целое 1–100000";
+    if (!Number.isInteger(cap) || cap < 1 || cap > 100000) e["capacity"] = "Вместимость: целое 1–100000";
     const pr = Number(form.price);
-    if (!Number.isInteger(pr) || pr < 0 || pr > 1000000) e.price = "Цена: целое 0–1000000";
-    if (form.venue_name.length > 160) e.venue_name = "Не более 160 символов";
-    if (form.address.length > 240) e.address = "Не более 240 символов";
+    if (!Number.isInteger(pr) || pr < 0 || pr > 1000000) e["price"] = "Цена: целое 0–1000000";
+    if (form.venue_name.length > 160) e["venue_name"] = "Не более 160 символов";
+    if (form.address.length > 240) e["address"] = "Не более 240 символов";
     setErrors(e);
     return Object.keys(e).length === 0;
   }
