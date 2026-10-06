@@ -93,6 +93,9 @@ function ProfilePage() {
           </Link>
         </div>
 
+        <Button asChild variant="outline" className="mt-6 mr-2">
+          <Link to="/access">Что мне доступно (права и маршруты)</Link>
+        </Button>
         {isAdmin && (
           <Button asChild variant="secondary" className="mt-6">
             <Link to="/admin">Перейти в панель администратора</Link>

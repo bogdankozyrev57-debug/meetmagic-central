@@ -28,6 +28,7 @@ export function SiteHeader() {
     { to: "/", label: "Мероприятия" },
     { to: "/tickets", label: "Мои билеты" },
     { to: "/organizer", label: "Организатору" },
+    { to: "/access", label: "Права" },
     { to: "/docs", label: "Документация" },
   ] as const;
   const links = isAdmin ? [...baseLinks, { to: "/admin", label: "Админ" } as const] : baseLinks;
@@ -57,6 +58,10 @@ export function SiteHeader() {
         <div className="ml-auto hidden items-center gap-2 md:flex">
           {!loading && user ? (
             <>
+              {/* Значок текущей роли — видно, под кем вы вошли */}
+              <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${isAdmin ? "bg-primary text-primary-foreground" : "bg-secondary text-secondary-foreground"}`}>
+                {isAdmin ? "Админ" : "Пользователь"}
+              </span>
               <Button asChild variant="secondary" size="sm">
                 <Link to="/profile">
                   <QrCode className="size-4" />
