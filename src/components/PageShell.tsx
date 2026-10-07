@@ -11,7 +11,7 @@ import {
   UserRound,
   X,
 } from "lucide-react";
-import { useState, type ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
@@ -19,9 +19,9 @@ import { useAuth } from "@/lib/auth";
 import { useRole } from "@/lib/roles";
 
 /**
- * Каркас страниц в стиле Google Класса:
- * слева — узкое меню с иконками и логотипом «Сбор», справа — содержимое.
- * На телефоне меню открывается кнопкой-«гамбургером» поверх страницы.
+ * Каркас страниц: сверху — узкая полоса с логотипом «Сбор» и кнопкой-«гамбургером»
+ * в правом верхнем углу. Боковое меню скрыто всегда и открывается
+ * ТОЛЬКО по нажатию на три чёрточки — на любом экране (телефон, планшет, компьютер).
  */
 export function PageShell({ children }: { children: ReactNode }) {
   const { user, loading } = useAuth();
@@ -30,8 +30,17 @@ export function PageShell({ children }: { children: ReactNode }) {
   const queryClient = useQueryClient();
   const [open, setOpen] = useState(false);
 
+  // Блокируем прокрутку страницы, пока меню открыто
+  useEffect(() => {
+    document.body.style.overflow = open ? "hidden" : "";
+    return () => {
+      document.body.style.overflow = "";
+    };
+  }, [open]);
+
   // Корректный выход: отмена запросов, очистка кэша, выход, переход без возврата «назад»
   async function handleSignOut() {
+    setOpen(false);
     await queryClient.cancelQueries();
     queryClient.clear();
     await supabase.auth.signOut();
@@ -50,7 +59,7 @@ export function PageShell({ children }: { children: ReactNode }) {
     : baseLinks;
 
   const nav = (
-    <nav className="flex flex-1 flex-col gap-1 px-3">
+    <nav className="flex flex-1 flex-col gap-1 px-3 py-2">
       {links.map((link) => (
         <Link
           key={link.to}
@@ -102,39 +111,37 @@ export function PageShell({ children }: { children: ReactNode }) {
     </div>
   );
 
-  const logo = (
-    <Link
-      to="/"
-      onClick={() => setOpen(false)}
-      className="flex items-center gap-2 px-4 py-4 font-display text-lg font-bold"
-    >
-      <span className="grid size-9 place-items-center rounded-xl bg-primary text-primary-foreground">
-        <CalendarDays className="size-4" />
-      </span>
-      Сбор
-    </Link>
-  );
-
   return (
-    <div className="flex min-h-screen">
-      {/* Боковое меню — как в Google Классе (видно на планшете и компьютере) */}
-      <aside className="sticky top-0 hidden h-screen w-64 shrink-0 flex-col border-r border-border/70 bg-background md:flex">
-        {logo}
-        {nav}
-        {account}
-      </aside>
+    <div className="flex min-h-screen flex-col">
+      {/* Верхняя полоса на всех экранах: логотип слева, «гамбургер» справа */}
+      <header className="sticky top-0 z-40 flex items-center justify-between border-b border-border/70 bg-background/85 px-4 py-2.5 backdrop-blur">
+        <Link to="/" onClick={() => setOpen(false)} className="flex items-center gap-2 font-display text-base font-bold">
+          <span className="grid size-8 place-items-center rounded-lg bg-primary text-primary-foreground">
+            <CalendarDays className="size-4" />
+          </span>
+          Сбор
+        </Link>
+        <Button variant="ghost" size="icon" onClick={() => setOpen(true)} aria-label="Открыть меню">
+          <Menu className="size-6" />
+        </Button>
+      </header>
 
-      {/* Мобильное меню поверх страницы */}
+      {/* Меню поверх страницы — открывается только по трём чёрточкам */}
       {open && (
-        <div className="fixed inset-0 z-50 md:hidden">
+        <div className="fixed inset-0 z-50">
           <div
             className="absolute inset-0 bg-foreground/40"
             onClick={() => setOpen(false)}
             aria-hidden
           />
-          <aside className="absolute left-0 top-0 flex h-full w-72 flex-col bg-background shadow-xl">
-            <div className="flex items-center justify-between pr-2">
-              {logo}
+          <aside className="absolute right-0 top-0 flex h-full w-72 flex-col bg-background shadow-xl">
+            <div className="flex items-center justify-between pl-4">
+              <span className="flex items-center gap-2 font-display text-lg font-bold">
+                <span className="grid size-9 place-items-center rounded-xl bg-primary text-primary-foreground">
+                  <CalendarDays className="size-4" />
+                </span>
+                Сбор
+              </span>
               <Button variant="ghost" size="icon" onClick={() => setOpen(false)} aria-label="Закрыть меню">
                 <X className="size-5" />
               </Button>
@@ -145,29 +152,14 @@ export function PageShell({ children }: { children: ReactNode }) {
         </div>
       )}
 
-      <div className="flex min-w-0 flex-1 flex-col">
-        {/* Верхняя полоса на телефоне: «гамбургер» + логотип */}
-        <header className="sticky top-0 z-40 flex items-center gap-2 border-b border-border/70 bg-background/85 px-3 py-2 backdrop-blur md:hidden">
-          <Button variant="ghost" size="icon" onClick={() => setOpen(true)} aria-label="Меню">
-            <Menu className="size-5" />
-          </Button>
-          <Link to="/" className="flex items-center gap-2 font-display text-base font-bold">
-            <span className="grid size-7 place-items-center rounded-lg bg-primary text-primary-foreground">
-              <CalendarDays className="size-3.5" />
-            </span>
-            Сбор
-          </Link>
-        </header>
+      <main className="flex-1">{children}</main>
 
-        <main className="flex-1">{children}</main>
-
-        <footer className="border-t border-border/70 py-8">
-          <div className="mx-auto w-full max-w-6xl px-4 text-sm text-muted-foreground">
-            Сбор — платформа для организации встреч и конференций: регистрация, QR-билеты, отзывы и
-            аналитика посещаемости.
-          </div>
-        </footer>
-      </div>
+      <footer className="border-t border-border/70 py-8">
+        <div className="mx-auto w-full max-w-6xl px-4 text-sm text-muted-foreground">
+          Сбор — платформа для организации встреч и конференций: регистрация, QR-билеты, отзывы и
+          аналитика посещаемости.
+        </div>
+      </footer>
     </div>
   );
 }
