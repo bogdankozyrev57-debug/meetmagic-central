@@ -43,7 +43,7 @@ export function useRole() {
   return {
     roles,
     /** Главная роль: администратор > организатор > пользователь. */
-    role: roles[0],
+    role: roles[0] ?? "user",
     isAdmin: roles.includes("admin"),
     isOrganizer: roles.includes("organizer"),
     loading: query.isLoading,

@@ -7,7 +7,7 @@
  * Вкладка «Мероприятия»: поиск, фильтры, сортировка, пагинация, смена статуса,
  * редактирование и удаление. Вкладка «Пользователи»: просмотр ролей и их выдача.
  */
-import { createFileRoute, Link, redirect } from "@tanstack/react-router";
+import { createFileRoute, Link, redirect, type ErrorComponentProps } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { toast } from "sonner";

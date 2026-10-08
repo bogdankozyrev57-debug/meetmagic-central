@@ -131,7 +131,7 @@ function ProfilePage() {
 
         <div className="card-surface mt-6 space-y-4 p-6">
           <div className="flex flex-wrap items-center gap-4">
-            <AvatarMark src={avatarLink.data ?? undefined} name={data?.fullName || user?.email || "?"} />
+            <AvatarMark src={avatarLink.data ?? null} name={data?.fullName || user?.email || "?"} />
             <div className="min-w-0">
               <p className="truncate text-sm text-muted-foreground">{user?.email}</p>
               <div className="mt-1 flex flex-wrap gap-1">
@@ -192,7 +192,7 @@ function ProfilePage() {
 }
 
 /** Круг аватара: фото пользователя, а если его нет — инициалы. */
-function AvatarMark({ src, name }: { src?: string; name: string }) {
+function AvatarMark({ src, name }: { src: string | null; name: string }) {
   const initials = name
     .trim()
     .split(/\s+/)
