@@ -29,6 +29,13 @@
       "when": 1791463306625,
       "tag": "0003_auto_organizer_role",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1791463324521,
+      "tag": "0004_avatars_storage_policies",
+      "breakpoints": true
     }
   ]
 }
