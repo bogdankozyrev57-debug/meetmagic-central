@@ -1,11 +1,13 @@
 /**
  * Панель администратора (/admin).
+ * Права проверяются в двух местах: загрузчик маршрута запрашивает роли на сервере
+ * (без роли admin страница не открывается — идёт переход на /access), а сами
+ * запросы к данным пропускаются только политиками RLS events_admin_* и
+ * user_roles_admin_* (функция public.has_role), поэтому обойти панель нельзя.
  * Вкладка «Мероприятия»: поиск, фильтры, сортировка, пагинация, смена статуса,
- * редактирование и удаление. Вкладка «Пользователи»: назначение/снятие роли admin.
- * Настоящая защита — в БД: политики events_admin_* и user_roles_admin_*
- * пропускают только пользователей с ролью admin (функция has_role).
+ * редактирование и удаление. Вкладка «Пользователи»: просмотр ролей и их выдача.
  */
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, redirect } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { toast } from "sonner";
@@ -15,11 +17,12 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { supabase } from "@/integrations/supabase/client";
-import { formatDateTime } from "@/lib/format";
-import { useRole } from "@/lib/roles";
 import { useAuth } from "@/lib/auth";
 import { CATEGORIES } from "@/lib/events";
 import { describeDbError } from "@/lib/event-schema";
+import { formatDateTime } from "@/lib/format";
+import { ROLE_NAME, type AppRole } from "@/lib/roles";
+import { getMyRoles } from "@/lib/roles.functions";
 
 export const Route = createFileRoute("/_authenticated/admin")({
   head: () => ({
@@ -31,8 +34,35 @@ export const Route = createFileRoute("/_authenticated/admin")({
       { name: "robots", content: "noindex" },
     ],
   }),
+  // Проверка роли до показа страницы: без роли admin — переход на страницу «Права»
+  loader: async () => {
+    const roles = await getMyRoles();
+    if (!roles.includes("admin")) throw redirect({ to: "/access" });
+    return { roles };
+  },
+  errorComponent: AdminUnavailable,
+  notFoundComponent: AdminUnavailable,
   component: AdminPage,
 });
+
+/** Заглушка, если права не подтвердились или запрос к серверу не удался. */
+function AdminUnavailable({ error }: { error?: unknown }) {
+  return (
+    <PageShell>
+      <div className="mx-auto max-w-md p-12 text-center">
+        <h1 className="font-display text-2xl font-bold">Панель недоступна</h1>
+        <p className="mt-2 text-sm text-muted-foreground">
+          {error instanceof Error && error.message
+            ? error.message
+            : "Раздел доступен только администраторам."}
+        </p>
+        <Button asChild className="mt-6">
+          <Link to="/access">Права доступа</Link>
+        </Button>
+      </div>
+    </PageShell>
+  );
+}
 
 const PAGE_SIZE = 10;
 const selectCls = "h-9 rounded-md border border-input bg-background px-3 text-sm";
@@ -43,20 +73,7 @@ type AdminEvent = {
 };
 
 function AdminPage() {
-  const { isAdmin, loading } = useRole();
   const [tab, setTab] = useState<"events" | "users">("events");
-
-  if (loading) return <PageShell><p className="p-12 text-center">Загрузка…</p></PageShell>;
-  if (!isAdmin)
-    return (
-      <PageShell>
-        <div className="mx-auto max-w-md p-12 text-center">
-          <h1 className="font-display text-2xl font-bold">Доступ запрещён</h1>
-          <p className="mt-2 text-sm text-muted-foreground">Раздел доступен только администраторам.</p>
-          <Button asChild className="mt-6"><Link to="/profile">В личный кабинет</Link></Button>
-        </div>
-      </PageShell>
-    );
 
   return (
     <PageShell>
@@ -277,12 +294,16 @@ function EditForm({ event, onClose, onSaved }: { event: AdminEvent; onClose: () 
 }
 
 /* ---------------- Пользователи ---------------- */
+type AdminUser = { id: string; full_name: string | null; created_at: string; roles: AppRole[] };
+
 function UsersAdmin() {
   const { user } = useAuth();
   const queryClient = useQueryClient();
   const [q, setQ] = useState("");
   const [page, setPage] = useState(0);
 
+  // Список профилей плюс роли каждого пользователя (политика user_roles_own_read
+  // пропускает администратору все строки — см. user_roles_admin_* политики)
   const { data, isLoading, error } = useQuery({
     queryKey: ["admin-users", q, page],
     queryFn: async () => {
@@ -298,21 +319,28 @@ function UsersAdmin() {
         ? await supabase.from("user_roles").select("user_id, role").in("user_id", ids)
         : { data: [], error: null };
       if (rErr) throw rErr;
-      const admins = new Set((roles ?? []).filter((r) => r.role === "admin").map((r) => r.user_id));
-      return { rows: (profiles ?? []).map((p) => ({ ...p, isAdmin: admins.has(p.id) })), total: count ?? 0 };
+      const byUser = new Map<string, AppRole[]>();
+      for (const r of roles ?? []) {
+        const list = byUser.get(r.user_id) ?? [];
+        list.push(r.role as AppRole);
+        byUser.set(r.user_id, list);
+      }
+      const rows: AdminUser[] = (profiles ?? []).map((p) => ({ ...p, roles: byUser.get(p.id) ?? [] }));
+      return { rows, total: count ?? 0 };
     },
   });
 
   const rows = data?.rows ?? [];
   const pages = Math.max(1, Math.ceil((data?.total ?? 0) / PAGE_SIZE));
 
-  async function setAdmin(id: string, make: boolean) {
+  /** Выдать роль или снять её (политики user_roles_admin_insert / _delete). */
+  async function setRole(id: string, role: AppRole, make: boolean) {
     try {
       const { error } = make
-        ? await supabase.from("user_roles").insert({ user_id: id, role: "admin" })
-        : await supabase.from("user_roles").delete().eq("user_id", id).eq("role", "admin");
+        ? await supabase.from("user_roles").insert({ user_id: id, role })
+        : await supabase.from("user_roles").delete().eq("user_id", id).eq("role", role);
       if (error) throw error;
-      toast.success(make ? "Назначен администратором" : "Права администратора сняты");
+      toast.success(make ? `Назначена роль «${ROLE_NAME[role]}»` : `Роль «${ROLE_NAME[role]}» снята`);
       queryClient.invalidateQueries({ queryKey: ["admin-users"] });
     } catch (err) { toast.error(describeDbError(err)); }
   }
@@ -323,7 +351,7 @@ function UsersAdmin() {
       <div className="card-surface mt-6 overflow-x-auto">
         <table className="w-full text-sm">
           <thead className="text-left text-muted-foreground">
-            <tr><th className="p-3">Имя</th><th className="p-3">Зарегистрирован</th><th className="p-3">Роль</th><th className="p-3" /></tr>
+            <tr><th className="p-3">Имя</th><th className="p-3">Зарегистрирован</th><th className="p-3">Роли</th><th className="p-3" /></tr>
           </thead>
           <tbody>
             {isLoading && <tr><td colSpan={4} className="p-6 text-center text-muted-foreground">Загрузка…</td></tr>}
@@ -333,12 +361,26 @@ function UsersAdmin() {
               <tr key={u.id} className="border-t border-border">
                 <td className="p-3 font-medium">{u.full_name || "Без имени"}{u.id === user?.id && " (вы)"}</td>
                 <td className="p-3">{formatDateTime(u.created_at)}</td>
-                <td className="p-3"><Badge variant={u.isAdmin ? "default" : "secondary"}>{u.isAdmin ? "Администратор" : "Пользователь"}</Badge></td>
-                <td className="p-3 text-right">
+                <td className="p-3">
+                  <div className="flex flex-wrap gap-1">
+                    {u.roles.length
+                      ? u.roles.map((r) => (
+                          <Badge key={r} variant={r === "admin" ? "default" : "secondary"}>{ROLE_NAME[r]}</Badge>
+                        ))
+                      : <Badge variant="outline">Пользователь</Badge>}
+                  </div>
+                </td>
+                <td className="whitespace-nowrap p-3 text-right">
+                  {/* Свою строку не правим: политики не разрешают снимать роли у себя */}
                   {u.id !== user?.id && (
-                    <Button size="sm" variant="ghost" onClick={() => setAdmin(u.id, !u.isAdmin)}>
-                      {u.isAdmin ? "Снять админа" : "Сделать админом"}
-                    </Button>
+                    <>
+                      <Button size="sm" variant="ghost" onClick={() => setRole(u.id, "organizer", !u.roles.includes("organizer"))}>
+                        {u.roles.includes("organizer") ? "Снять организатора" : "Сделать организатором"}
+                      </Button>
+                      <Button size="sm" variant="ghost" onClick={() => setRole(u.id, "admin", !u.roles.includes("admin"))}>
+                        {u.roles.includes("admin") ? "Снять админа" : "Сделать админом"}
+                      </Button>
+                    </>
                   )}
                 </td>
               </tr>
@@ -347,7 +389,7 @@ function UsersAdmin() {
         </table>
       </div>
       <div className="mt-4 flex items-center justify-between text-sm">
-        <span className="text-muted-foreground">Страница {page + 1} из {pages}</span>
+        <span className="text-muted-foreground">Всего: {data?.total ?? 0} · страница {page + 1} из {pages}</span>
         <div className="flex gap-2">
           <Button size="sm" variant="outline" disabled={page === 0} onClick={() => setPage(page - 1)}>Назад</Button>
           <Button size="sm" variant="outline" disabled={page + 1 >= pages} onClick={() => setPage(page + 1)}>Вперёд</Button>

@@ -1,6 +1,6 @@
 /**
  * Страница «Права доступа» (/access) — наглядная демонстрация на прототипе:
- *  1) текущая роль (гость / пользователь / администратор);
+ *  1) текущая роль (гость / пользователь / организатор / администратор);
  *  2) матрица прав по ролям;
  *  3) карта маршрутов с живой проверкой доступа;
  *  4) живые запросы к БД: сколько строк видит текущий пользователь (RLS).
@@ -22,7 +22,7 @@ export const Route = createFileRoute("/access")({
       { title: "Права доступа и маршруты — Сбор" },
       { name: "description", content: "Наглядная схема ролей, прав доступа, маршрутов и данных из базы в сервисе Сбор." },
       { property: "og:title", content: "Права доступа и маршруты — Сбор" },
-      { property: "og:description", content: "Роли пользователь/админ, личный кабинет, роутинг и данные из БД." },
+      { property: "og:description", content: "Роли пользователь, организатор и админ, личный кабинет, роутинг и данные из БД." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
     ],
@@ -30,16 +30,20 @@ export const Route = createFileRoute("/access")({
   component: AccessPage,
 });
 
-type Level = "guest" | "user" | "admin";
+type Level = "guest" | "user" | "organizer" | "admin";
 
-// Матрица прав: [действие, гость, пользователь, администратор]
-const MATRIX: [string, boolean, boolean, boolean][] = [
-  ["Смотреть афишу и детальные страницы", true, true, true],
-  ["Регистрироваться на мероприятия, получать QR-билет", false, true, true],
-  ["Личный кабинет /profile, свои билеты", false, true, true],
-  ["Создавать и редактировать свои мероприятия", false, true, true],
-  ["Видеть чужие билеты и неопубликованные события", false, false, true],
-  ["Панель администратора /admin, управление ролями", false, false, true],
+/** Столбцы матрицы прав — в том же порядке, что и роли в интерфейсе. */
+const LEVELS: Level[] = ["guest", "user", "organizer", "admin"];
+
+// Матрица прав: [действие, гость, пользователь, организатор, администратор]
+const MATRIX: [string, boolean, boolean, boolean, boolean][] = [
+  ["Смотреть афишу, карточку мероприятия, карту и отзывы", true, true, true, true],
+  ["Регистрироваться на мероприятия, получать QR-билет", false, true, true, true],
+  ["Личный кабинет /profile: имя, аватар, свои билеты", false, true, true, true],
+  ["Создавать и редактировать свои мероприятия, отмечать приход по QR", false, true, true, true],
+  ["Видеть чужие билеты и неопубликованные мероприятия", false, false, false, true],
+  ["Панель /admin: чужие мероприятия, статусы, удаление", false, false, false, true],
+  ["Назначать и снимать роли «организатор» и «администратор»", false, false, false, true],
 ];
 
 // Карта маршрутов: путь, назначение, минимальный уровень
@@ -53,13 +57,18 @@ const ROUTES: { to: string; label: string; min: Level }[] = [
   { to: "/admin", label: "Панель администратора", min: "admin" },
 ];
 
-const RANK: Record<Level, number> = { guest: 0, user: 1, admin: 2 };
-const LEVEL_NAME: Record<Level, string> = { guest: "Гость", user: "Пользователь", admin: "Администратор" };
+const RANK: Record<Level, number> = { guest: 0, user: 1, organizer: 1, admin: 2 };
+const LEVEL_NAME: Record<Level, string> = {
+  guest: "Гость",
+  user: "Пользователь",
+  organizer: "Организатор",
+  admin: "Администратор",
+};
 
 function AccessPage() {
   const { user } = useAuth();
-  const { isAdmin } = useRole();
-  const level: Level = !user ? "guest" : isAdmin ? "admin" : "user";
+  const { isAdmin, isOrganizer } = useRole();
+  const level: Level = !user ? "guest" : isAdmin ? "admin" : isOrganizer ? "organizer" : "user";
 
   // Живые запросы: одна и та же выборка возвращает разное число строк в зависимости от роли
   const { data, isLoading } = useQuery({
@@ -76,7 +85,7 @@ function AccessPage() {
     },
   });
 
-  const col = level === "guest" ? 1 : level === "user" ? 2 : 3;
+  const col = LEVELS.indexOf(level) + 1;
 
   return (
     <PageShell>
@@ -97,7 +106,7 @@ function AccessPage() {
             <thead>
               <tr className="border-b border-border text-left">
                 <th className="py-2">Действие</th>
-                {(["guest", "user", "admin"] as Level[]).map((l, i) => (
+                {LEVELS.map((l, i) => (
                   <th key={l} className={`py-2 text-center ${i + 1 === col ? "text-primary" : ""}`}>
                     {LEVEL_NAME[l]}{i + 1 === col && " (вы)"}
                   </th>
@@ -117,6 +126,11 @@ function AccessPage() {
               ))}
             </tbody>
           </table>
+          <p className="mt-4 text-xs text-muted-foreground">
+            Роль «Организатор» выдаётся автоматически, когда пользователь создаёт первое мероприятие,
+            и снимается администратором. Она отмечает ведущих события и сама по себе доступ к чужим
+            данным не расширяет.
+          </p>
         </section>
 
         <section className="card-surface p-6">
@@ -134,7 +148,7 @@ function AccessPage() {
                   ) : (
                     <span className="flex items-center gap-1 text-sm text-muted-foreground">
                       <Lock className="size-4" />
-                      {r.min === "user" ? "переадресация на /auth" : "«Доступ запрещён»"}
+                      {r.min === "user" ? "переадресация на /auth" : "нет прав — переход на /access"}
                     </span>
                   )}
                 </li>
