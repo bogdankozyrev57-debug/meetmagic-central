@@ -16,16 +16,16 @@ import { useEffect, useState, type ReactNode } from "react";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth";
-import { useRole } from "@/lib/roles";
+import { ROLE_NAME, useRole } from "@/lib/roles";
 
 /**
- * Каркас страниц: сверху — узкая полоса с логотипом «Сбор» и кнопкой-«гамбургером»
- * в правом верхнем углу. Боковое меню скрыто всегда и открывается
+ * Каркас страниц: сверху слева — кнопка-«гамбургер» (три чёрточки), под ней —
+ * логотип «Сбор». Боковое меню скрыто всегда и открывается
  * ТОЛЬКО по нажатию на три чёрточки — на любом экране (телефон, планшет, компьютер).
  */
 export function PageShell({ children }: { children: ReactNode }) {
   const { user, loading } = useAuth();
-  const { isAdmin } = useRole();
+  const { role, isAdmin } = useRole();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [open, setOpen] = useState(false);
@@ -90,7 +90,7 @@ export function PageShell({ children }: { children: ReactNode }) {
                 isAdmin ? "bg-primary text-primary-foreground" : "bg-secondary text-secondary-foreground"
               }`}
             >
-              {isAdmin ? "Админ" : "Пользователь"}
+              {ROLE_NAME[role]}
             </span>
           </Link>
           <button
@@ -113,17 +113,21 @@ export function PageShell({ children }: { children: ReactNode }) {
 
   return (
     <div className="flex min-h-screen flex-col">
-      {/* Верхняя полоса на всех экранах: логотип слева, «гамбургер» справа */}
-      <header className="sticky top-0 z-40 flex items-center justify-between border-b border-border/70 bg-background/85 px-4 py-2.5 backdrop-blur">
-        <Link to="/" onClick={() => setOpen(false)} className="flex items-center gap-2 font-display text-base font-bold">
-          <span className="grid size-8 place-items-center rounded-lg bg-primary text-primary-foreground">
-            <CalendarDays className="size-4" />
-          </span>
-          Сбор
-        </Link>
-        <Button variant="ghost" size="icon" onClick={() => setOpen(true)} aria-label="Открыть меню">
-          <Menu className="size-6" />
-        </Button>
+      {/* Верхняя полоса: слева «три чёрточки», под ней — логотип */}
+      <header className="sticky top-0 z-40 border-b border-border/70 bg-background/85 backdrop-blur">
+        <div className="flex items-center px-2 pt-1">
+          <Button variant="ghost" size="icon" onClick={() => setOpen(true)} aria-label="Открыть меню">
+            <Menu className="size-6" />
+          </Button>
+        </div>
+        <div className="px-4 pb-2.5">
+          <Link to="/" onClick={() => setOpen(false)} className="inline-flex items-center gap-2 font-display text-base font-bold">
+            <span className="grid size-8 place-items-center rounded-lg bg-primary text-primary-foreground">
+              <CalendarDays className="size-4" />
+            </span>
+            Сбор
+          </Link>
+        </div>
       </header>
 
       {/* Меню поверх страницы — открывается только по трём чёрточкам */}
