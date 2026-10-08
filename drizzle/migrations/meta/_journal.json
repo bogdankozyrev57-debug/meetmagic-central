@@ -15,6 +15,13 @@
       "when": 1791301691677,
       "tag": "0001_auto_admin_email",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1791463289829,
+      "tag": "0002_add_organizer_role",
+      "breakpoints": true
     }
   ]
 }
