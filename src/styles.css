@@ -142,3 +142,52 @@
   border-radius: var(--radius-xl);
   box-shadow: var(--shadow-card);
 }
+
+/* ===== Анимации и микроанимации ===== */
+@keyframes rise-in {
+  from { opacity: 0; transform: translateY(18px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@keyframes float-soft {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-6px); }
+}
+@keyframes shimmer-x {
+  from { background-position: 200% 0; }
+  to { background-position: -200% 0; }
+}
+
+/* Плавное появление блока; задержка задаётся через --delay */
+@utility rise-in {
+  animation: rise-in 0.7s cubic-bezier(0.22, 1, 0.36, 1) both;
+  animation-delay: var(--delay, 0ms);
+}
+@utility float-soft {
+  animation: float-soft 4s ease-in-out infinite;
+}
+/* Подъём карточки с тенью при наведении */
+@utility lift {
+  transition: transform 0.25s ease, box-shadow 0.25s ease, border-color 0.25s ease;
+  &:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 22px 40px -24px color-mix(in oklab, var(--primary) 55%, transparent);
+    border-color: color-mix(in oklab, var(--primary) 35%, var(--border));
+  }
+}
+/* Отклик кнопки на нажатие */
+@utility press {
+  transition: transform 0.15s ease;
+  &:active { transform: scale(0.96); }
+}
+@utility text-gradient {
+  background: linear-gradient(100deg, var(--primary), var(--accent), var(--primary));
+  background-size: 200% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  animation: shimmer-x 8s linear infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; transition-duration: 0.01ms !important; }
+}
