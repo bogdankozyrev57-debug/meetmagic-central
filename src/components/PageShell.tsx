@@ -65,7 +65,7 @@ export function PageShell({ children }: { children: ReactNode }) {
           key={link.to}
           to={link.to}
           onClick={() => setOpen(false)}
-          className="flex items-center gap-3 rounded-full px-4 py-2.5 text-sm font-medium text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground [&.active]:bg-primary/10 [&.active]:text-primary"
+          className="flex items-center gap-3 rounded-full px-4 py-2.5 text-sm font-medium text-muted-foreground transition-all hover:translate-x-1 hover:bg-secondary hover:text-foreground [&.active]:bg-primary/10 [&.active]:text-primary"
         >
           <link.icon className="size-5 shrink-0" />
           {link.label}
@@ -81,7 +81,7 @@ export function PageShell({ children }: { children: ReactNode }) {
           <Link
             to="/profile"
             onClick={() => setOpen(false)}
-            className="flex items-center gap-3 rounded-full px-4 py-2.5 text-sm font-medium text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground [&.active]:bg-primary/10 [&.active]:text-primary"
+            className="flex items-center gap-3 rounded-full px-4 py-2.5 text-sm font-medium text-muted-foreground transition-all hover:translate-x-1 hover:bg-secondary hover:text-foreground [&.active]:bg-primary/10 [&.active]:text-primary"
           >
             <UserRound className="size-5 shrink-0" />
             Кабинет
@@ -95,7 +95,7 @@ export function PageShell({ children }: { children: ReactNode }) {
           </Link>
           <button
             onClick={handleSignOut}
-            className="flex items-center gap-3 rounded-full px-4 py-2.5 text-left text-sm font-medium text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
+            className="flex items-center gap-3 rounded-full px-4 py-2.5 text-left text-sm font-medium text-muted-foreground transition-all hover:translate-x-1 hover:bg-secondary hover:text-foreground"
           >
             <LogOut className="size-5 shrink-0" />
             Выйти
@@ -134,11 +134,11 @@ export function PageShell({ children }: { children: ReactNode }) {
       {open && (
         <div className="fixed inset-0 z-50">
           <div
-            className="absolute inset-0 bg-foreground/40"
+            className="absolute inset-0 bg-foreground/40 animate-in fade-in duration-200"
             onClick={() => setOpen(false)}
             aria-hidden
           />
-          <aside className="absolute right-0 top-0 flex h-full w-72 flex-col bg-background shadow-xl">
+          <aside className="absolute left-0 top-0 flex h-full w-72 flex-col bg-background shadow-xl animate-in slide-in-from-left duration-300">
             <div className="flex items-center justify-between pl-4">
               <span className="flex items-center gap-2 font-display text-lg font-bold">
                 <span className="grid size-9 place-items-center rounded-xl bg-primary text-primary-foreground">
