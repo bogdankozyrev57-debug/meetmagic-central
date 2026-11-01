@@ -69,12 +69,12 @@ function Index() {
     <PageShell>
       <section className="hero-surface border-b border-border/70">
         <div className="mx-auto grid w-full max-w-6xl gap-8 px-4 py-8 sm:py-16 lg:grid-cols-[1.1fr_1fr] lg:items-center lg:gap-10 lg:py-24">
-          <div className="min-w-0">
+          <div className="min-w-0 rise-in">
             <Badge variant="secondary" className="mb-4">
               Регистрация · QR-вход · Аналитика
             </Badge>
             <h1 className="font-display text-3xl font-bold leading-tight sm:text-5xl">
-              Проводите мероприятия, а гостей пускайте по QR-коду
+              Проводите мероприятия, а гостей пускайте <span className="text-gradient">по QR-коду</span>
             </h1>
             <p className="mt-4 max-w-xl text-base text-muted-foreground sm:text-lg">
               Создайте событие, откройте регистрацию, отправьте участникам электронные билеты и
@@ -82,10 +82,10 @@ function Index() {
               организатора.
             </p>
             <div className="mt-7 flex flex-wrap gap-3">
-              <Button asChild size="lg">
+              <Button asChild size="lg" className="press">
                 <Link to="/organizer">Создать мероприятие</Link>
               </Button>
-              <Button asChild size="lg" variant="secondary">
+              <Button asChild size="lg" className="press" variant="secondary">
                 <Link to="/tickets">Мои билеты</Link>
               </Button>
             </div>
@@ -96,8 +96,8 @@ function Index() {
                 { icon: QrCode, title: "Вход по QR", text: "Сканер прямо в браузере" },
                 { icon: BarChart3, title: "Аналитика", text: "Регистрации, приход, отзывы" },
               ].map((item) => (
-                <div key={item.title} className="card-surface p-4">
-                  <item.icon className="size-5 text-primary" />
+                <div key={item.title} className="card-surface lift p-4">
+                  <item.icon className="float-soft size-5 text-primary" />
                   <dt className="mt-2 font-display text-sm font-semibold">{item.title}</dt>
                   <dd className="text-sm text-muted-foreground">{item.text}</dd>
                 </div>
@@ -105,7 +105,7 @@ function Index() {
             </dl>
           </div>
 
-          <HeroSlider />
+          <div className="rise-in" style={{ ["--delay" as string]: "200ms" }}><HeroSlider /></div>
         </div>
       </section>
 

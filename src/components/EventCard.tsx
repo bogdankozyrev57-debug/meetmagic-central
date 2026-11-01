@@ -10,7 +10,7 @@ export function EventCard({ event, registered }: { event: EventRow; registered?:
     <Link
       to="/events/$id"
       params={{ id: event.id }}
-      className="card-surface group flex flex-col gap-3 p-5 transition-transform hover:-translate-y-1"
+      className="card-surface lift rise-in group flex flex-col gap-3 p-5"
     >
       <div className="flex items-center justify-between gap-3">
         <Badge variant="secondary">{event.category}</Badge>
