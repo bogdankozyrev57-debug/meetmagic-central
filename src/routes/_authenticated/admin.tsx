@@ -41,7 +41,7 @@ export const Route = createFileRoute("/_authenticated/admin")({
     return { roles };
   },
   errorComponent: AdminUnavailable,
-  notFoundComponent: AdminUnavailable,
+  notFoundComponent: () => <AdminUnavailable />,
   component: AdminPage,
 });
 

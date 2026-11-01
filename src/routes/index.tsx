@@ -3,7 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
 import { QrCode, Search, Ticket, BarChart3 } from "lucide-react";
 
-import heroImage from "@/assets/hero-event.jpg";
+import { HeroSlider } from "@/components/HeroSlider";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -68,12 +68,12 @@ function Index() {
   return (
     <PageShell>
       <section className="hero-surface border-b border-border/70">
-        <div className="mx-auto grid w-full max-w-6xl gap-10 px-4 py-16 lg:grid-cols-[1.1fr_1fr] lg:items-center lg:py-24">
-          <div>
+        <div className="mx-auto grid w-full max-w-6xl gap-8 px-4 py-8 sm:py-16 lg:grid-cols-[1.1fr_1fr] lg:items-center lg:gap-10 lg:py-24">
+          <div className="min-w-0">
             <Badge variant="secondary" className="mb-4">
               Регистрация · QR-вход · Аналитика
             </Badge>
-            <h1 className="font-display text-4xl font-bold leading-tight sm:text-5xl">
+            <h1 className="font-display text-3xl font-bold leading-tight sm:text-5xl">
               Проводите мероприятия, а гостей пускайте по QR-коду
             </h1>
             <p className="mt-4 max-w-xl text-base text-muted-foreground sm:text-lg">
@@ -105,13 +105,7 @@ function Index() {
             </dl>
           </div>
 
-          <img
-            src={heroImage}
-            alt="Зал конференции с участниками перед сценой"
-            width={1600}
-            height={900}
-            className="w-full rounded-2xl border border-border object-cover shadow-2xl"
-          />
+          <HeroSlider />
         </div>
       </section>
 
