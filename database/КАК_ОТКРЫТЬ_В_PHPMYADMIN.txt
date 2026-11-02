@@ -1,0 +1,5 @@
+1. Установите XAMPP (или OpenServer) и запустите Apache и MySQL.
+2. Откройте в браузере http://localhost/phpmyadmin
+3. Вкладка «Импорт» -> «Выберите файл» -> sbor_mysql.sql -> «Вперёд».
+4. Слева появится база «sbor» с таблицами: profiles, user_roles, events, registrations, reviews.
+Пароли пользователей в файл не входят — они хранятся только в защищённой системе входа сайта.
