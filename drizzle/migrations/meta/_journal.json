@@ -43,6 +43,13 @@
       "when": 1793678310780,
       "tag": "0005_0005_backups_storage_policies",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1793678396513,
+      "tag": "0006_0006_backups_read_for_authenticated",
+      "breakpoints": true
     }
   ]
 }
