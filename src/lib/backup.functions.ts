@@ -4,18 +4,18 @@
  * Файл копии хранится в закрытой корзине «backups» хранилища Lovable Cloud, то есть
  * на том же аккаунте, где уже живёт база проекта: его не нужно носить на флешке, он
  * доступен из любого места после входа. Списком файлов и их скачиванием заведует
- * политика «backups_read», а создавать, менять и удалять файлы может только
+ * политика «backups_read», а создавать, заменять и удалять файлы может только
  * администратор (политики «backups_admin_*» через public.has_role).
  *
- * Копия собирается на сервере: читаются все таблицы (клиентский запрос к чужим
- * регистрациям или ролям правила RLS не пропустили бы), текст оформляется под MySQL,
- * чтобы файл можно было импортировать в phpMyAdmin, и загружается в хранилище.
+ * Копию собирает сервер: читаются все таблицы (клиентский запрос к чужим регистрациям
+ * или ролям правила RLS не пропустили бы), текст оформляется под MySQL, чтобы файл
+ * можно было импортировать в phpMyAdmin, и загружается в хранилище.
  */
 import { createServerFn } from "@tanstack/react-start";
 
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
-const BUCKET = "backups";
+export const BACKUP_BUCKET = "backups";
 
 /** Структура таблиц в формате MySQL — тот же файл открывает phpMyAdmin. */
 const DDL = `-- База данных проекта «Сбор» (MySQL 5.7+/MariaDB 10.3+)
@@ -91,26 +91,62 @@ CREATE TABLE reviews (
 ) ENGINE=InnoDB COMMENT='Отзывы';
 `;
 
+/** Порядок и состав таблиц, которые попадают в резервную копию. */
+export const DUMP_TABLES: { name: string; columns: string[] }[] = [
+  { name: "profiles", columns: ["id", "full_name", "avatar_url", "created_at"] },
+  { name: "user_roles", columns: ["id", "user_id", "role", "created_at"] },
+  {
+    name: "events",
+    columns: [
+      "id",
+      "organizer_id",
+      "title",
+      "description",
+      "category",
+      "starts_at",
+      "ends_at",
+      "venue_name",
+      "address",
+      "lat",
+      "lng",
+      "capacity",
+      "price",
+      "cover_url",
+      "is_published",
+      "created_at",
+      "updated_at",
+    ],
+  },
+  {
+    name: "registrations",
+    columns: ["id", "event_id", "user_id", "ticket_code", "status", "checked_in_at", "created_at"],
+  },
+  { name: "reviews", columns: ["id", "event_id", "user_id", "rating", "comment", "created_at"] },
+];
+
+export type DumpTable = { name: string; columns: string[]; rows: Record<string, unknown>[] };
+
 /** Значение поля -> текст для вставки в MySQL (кавычки, NULL, даты, флаги). */
 function sqlValue(value: unknown): string {
   if (value === null || value === undefined) return "NULL";
   if (typeof value === "boolean") return value ? "1" : "0";
   if (typeof value === "number") return Number.isFinite(value) ? String(value) : "NULL";
   if (value instanceof Date) return sqlDate(value.toISOString());
-  if (typeof value === "object") return escape(`"${JSON.stringify(value)}"`);
+  if (typeof value === "object") return escapeText(JSON.stringify(value));
   const text = String(value);
-  // Дата/время из базы приходит строкой вида 2026-10-03T05:41:47.123456+00:00
+  // Дата из базы приходит строкой вида 2026-10-03T05:41:47.123456+00:00
   if (/^\d{4}-\d{2}-\d{2}[T ]\d{2}:\d{2}/.test(text)) return sqlDate(text);
-  return escape(`"${text}"`);
+  return escapeText(text);
 }
 
-function escape(quoted: string): string {
-  return quoted
+function escapeText(text: string): string {
+  const escaped = text
     .replace(/\\/g, "\\\\")
-    .replace(/"/g, '\\"')
+    .replace(/'/g, "''")
     .replace(/\n/g, "\\n")
     .replace(/\r/g, "\\r")
     .replace(/\t/g, "\\t");
+  return `'${escaped}'`;
 }
 
 /** ISO-дата -> формат DATETIME для MySQL (без миллисекунд и часового пояса). */
@@ -118,74 +154,39 @@ function sqlDate(iso: string): string {
   const date = new Date(iso);
   if (Number.isNaN(date.getTime())) return "NULL";
   const pad = (n: number) => String(n).padStart(2, "0");
-  return `"${date.getUTCFullYear()}-${pad(date.getUTCMonth() + 1)}-${pad(date.getUTCDate())} ${pad(
-    date.getUTCHours(),
-  )}:${pad(date.getUTCMinutes())}:${pad(date.getUTCSeconds())}"`;
+  const stamp =
+    `${date.getUTCFullYear()}-${pad(date.getUTCMonth() + 1)}-${pad(date.getUTCDate())} ` +
+    `${pad(date.getUTCHours())}:${pad(date.getUTCMinutes())}:${pad(date.getUTCSeconds())}`;
+  return `'${stamp}'`;
 }
 
 /** Строки таблицы -> блок INSERT INTO ... VALUES. */
-function insertBlock(table: string, columns: string[], rows: Record<string, unknown>[]): string {
-  if (!rows.length) return `-- ${table}: записей нет\n`;
-  const values = rows.map(
-    (row) => `(${columns.map((column) => sqlValue(row[column])).join(",")})`,
+function insertBlock(table: DumpTable): string {
+  if (!table.rows.length) return `-- ${table.name}: записей нет\n`;
+  const values = table.rows.map(
+    (row) => `(${table.columns.map((column) => sqlValue(row[column])).join(", ")})`,
   );
-  return `INSERT INTO ${table} (${columns.join(", ")}) VALUES\n${values.join(",\n")};\n`;
+  return `INSERT INTO ${table.name} (${table.columns.join(", ")}) VALUES\n${values.join(",\n")};\n`;
 }
 
-/** Собрать текст резервной копии всей базы в формате MySQL. */
-export async function buildBackupDump(admin: {
-  from: (table: string) => { select: (columns: string) => PromiseLike<{ data: unknown; error: unknown }> };
-}): Promise<string> {
-  const tables: { name: string; columns: string[] }[] = [
-    { name: "profiles", columns: ["id", "full_name", "avatar_url", "created_at"] },
-    { name: "user_roles", columns: ["id", "user_id", "role", "created_at"] },
-    {
-      name: "events",
-      columns: [
-        "id",
-        "organizer_id",
-        "title",
-        "description",
-        "category",
-        "starts_at",
-        "ends_at",
-        "venue_name",
-        "address",
-        "lat",
-        "lng",
-        "capacity",
-        "price",
-        "cover_url",
-        "is_published",
-        "created_at",
-        "updated_at",
-      ],
-    },
-    {
-      name: "registrations",
-      columns: ["id", "event_id", "user_id", "ticket_code", "status", "checked_in_at", "created_at"],
-    },
-    {
-      name: "reviews",
-      columns: ["id", "event_id", "user_id", "rating", "comment", "created_at"],
-    },
-  ];
+/** Собрать текст резервной копии: структура таблиц + все данные. */
+export function buildDumpSql(tables: DumpTable[]): string {
+  return `${DDL}\n${tables.map(insertBlock).join("\n")}\nSET FOREIGN_KEY_CHECKS=1;\n`;
+}
 
-  const parts = [DDL];
-  for (const table of tables) {
-    const { data, error } = await admin.from(table.name).select("*");
-    if (error) throw new Error(`Не удалось прочитать таблицу ${table.name}`);
-    const rows = (data ?? []) as Record<string, unknown>[];
-    parts.push(insertBlock(table.name, table.columns, rows));
-  }
-  parts.push("SET FOREIGN_KEY_CHECKS=1;\n");
-  return parts.join("\n");
+/** Имя файла копии с меткой времени: sbor-2026-11-03-0657.sql */
+export function backupFileName(at: Date): string {
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return (
+    `sbor-${at.getUTCFullYear()}-${pad(at.getUTCMonth() + 1)}-${pad(at.getUTCDate())}` +
+    `-${pad(at.getUTCHours())}${pad(at.getUTCMinutes())}.sql`
+  );
 }
 
 /**
  * Создать резервную копию: собрать текст базы и положить его в закрытую корзину
- * «backups». Доступен только администраторам — роль проверяется на сервере по
- * токену сессии, а не по данным браузера.
+ * «backups». Раздел доступен только администраторам — роль проверяется на сервере
+ * по токену сессии, а не по данным браузера.
  */
 export const createBackup = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
@@ -199,20 +200,24 @@ export const createBackup = createServerFn({ method: "POST" })
     if (!adminRole?.length) throw new Error("Резервные копии доступны только администраторам");
 
     // Полное чтение базы и запись в хранилище — привилегированная операция,
-    // поэтому клиент с правами сервера подключается уже после проверки роли.
+    // поэтому серверный клиент подключается уже после проверки роли.
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
-    const dump = await buildBackupDump(supabaseAdmin as never);
-    const stamp = new Date().toISOString().slice(0, 16).replace("T", "-").replace(":", "");
-    const path = `sbor-${stamp}.sql`;
+    const tables: DumpTable[] = [];
+    for (const table of DUMP_TABLES) {
+      const { data, error } = await supabaseAdmin.from(table.name).select("*");
+      if (error) throw new Error(`Не удалось прочитать таблицу ${table.name}`);
+      tables.push({ ...table, rows: (data ?? []) as unknown as Record<string, unknown>[] });
+    }
+
+    const dump = buildDumpSql(tables);
+    const bytes = new TextEncoder().encode(dump);
+    const path = backupFileName(new Date());
 
     const { error: uploadError } = await supabaseAdmin.storage
-      .from(BUCKET)
-      .upload(path, Buffer.from(dump, "utf8"), {
-        contentType: "text/sql; charset=utf-8",
-        upsert: true,
-      });
+      .from(BACKUP_BUCKET)
+      .upload(path, bytes, { contentType: "text/sql; charset=utf-8", upsert: true });
     if (uploadError) throw new Error("Не удалось сохранить копию в хранилище");
 
-    return { path, size: Buffer.byteLength(dump, "utf8") };
+    return { path, size: bytes.length };
   });
