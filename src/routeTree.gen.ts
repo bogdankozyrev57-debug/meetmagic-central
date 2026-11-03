@@ -15,6 +15,7 @@ import { Route as AccessRouteImport } from './routes/access'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as DocsRouteImport } from './routes/docs'
 import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated/admin'
+import { Route as AuthenticatedBackupRouteImport } from './routes/_authenticated/backup'
 import { Route as AuthenticatedOrganizerRouteImport } from './routes/_authenticated/organizer'
 import { Route as AuthenticatedProfileRouteImport } from './routes/_authenticated/profile'
 import { Route as AuthenticatedTicketsRouteImport } from './routes/_authenticated/tickets'
@@ -50,6 +51,11 @@ const AuthenticatedAdminRoute = AuthenticatedAdminRouteImport.update({
   path: '/admin',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedBackupRoute = AuthenticatedBackupRouteImport.update({
+  id: '/backup',
+  path: '/backup',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedOrganizerRoute = AuthenticatedOrganizerRouteImport.update({
   id: '/organizer',
   path: '/organizer',
@@ -83,6 +89,7 @@ export interface FileRoutesByFullPath {
   '/auth': typeof AuthRoute
   '/docs': typeof DocsRoute
   '/admin': typeof AuthenticatedAdminRoute
+  '/backup': typeof AuthenticatedBackupRoute
   '/organizer': typeof AuthenticatedOrganizerRouteWithChildren
   '/profile': typeof AuthenticatedProfileRoute
   '/tickets': typeof AuthenticatedTicketsRoute
@@ -95,6 +102,7 @@ export interface FileRoutesByTo {
   '/auth': typeof AuthRoute
   '/docs': typeof DocsRoute
   '/admin': typeof AuthenticatedAdminRoute
+  '/backup': typeof AuthenticatedBackupRoute
   '/organizer': typeof AuthenticatedOrganizerRouteWithChildren
   '/profile': typeof AuthenticatedProfileRoute
   '/tickets': typeof AuthenticatedTicketsRoute
@@ -109,6 +117,7 @@ export interface FileRoutesById {
   '/auth': typeof AuthRoute
   '/docs': typeof DocsRoute
   '/_authenticated/admin': typeof AuthenticatedAdminRoute
+  '/_authenticated/backup': typeof AuthenticatedBackupRoute
   '/_authenticated/organizer': typeof AuthenticatedOrganizerRouteWithChildren
   '/_authenticated/profile': typeof AuthenticatedProfileRoute
   '/_authenticated/tickets': typeof AuthenticatedTicketsRoute
@@ -123,6 +132,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/docs'
     | '/admin'
+    | '/backup'
     | '/organizer'
     | '/profile'
     | '/tickets'
@@ -135,6 +145,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/docs'
     | '/admin'
+    | '/backup'
     | '/organizer'
     | '/profile'
     | '/tickets'
@@ -148,6 +159,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/docs'
     | '/_authenticated/admin'
+    | '/_authenticated/backup'
     | '/_authenticated/organizer'
     | '/_authenticated/profile'
     | '/_authenticated/tickets'
@@ -208,6 +220,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/backup': {
+      id: '/_authenticated/backup'
+      path: '/backup'
+      fullPath: '/backup'
+      preLoaderRoute: typeof AuthenticatedBackupRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/organizer': {
       id: '/_authenticated/organizer'
       path: '/organizer'
@@ -262,6 +281,7 @@ const AuthenticatedOrganizerRouteWithChildren =
 
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedAdminRoute: typeof AuthenticatedAdminRoute
+  AuthenticatedBackupRoute: typeof AuthenticatedBackupRoute
   AuthenticatedOrganizerRoute: typeof AuthenticatedOrganizerRouteWithChildren
   AuthenticatedProfileRoute: typeof AuthenticatedProfileRoute
   AuthenticatedTicketsRoute: typeof AuthenticatedTicketsRoute
@@ -269,6 +289,7 @@ interface AuthenticatedRouteRouteChildren {
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedAdminRoute: AuthenticatedAdminRoute,
+  AuthenticatedBackupRoute: AuthenticatedBackupRoute,
   AuthenticatedOrganizerRoute: AuthenticatedOrganizerRouteWithChildren,
   AuthenticatedProfileRoute: AuthenticatedProfileRoute,
   AuthenticatedTicketsRoute: AuthenticatedTicketsRoute,

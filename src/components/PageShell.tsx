@@ -4,6 +4,7 @@ import {
   BarChart3,
   BookOpen,
   CalendarDays,
+  DatabaseBackup,
   LogOut,
   Menu,
   ShieldCheck,
@@ -55,7 +56,11 @@ export function PageShell({ children }: { children: ReactNode }) {
     { to: "/docs", label: "Документация", icon: BookOpen },
   ] as const;
   const links = isAdmin
-    ? [...baseLinks, { to: "/admin", label: "Админ", icon: ShieldCheck } as const]
+    ? [
+        ...baseLinks,
+        { to: "/admin", label: "Админ", icon: ShieldCheck } as const,
+        { to: "/backup", label: "Копии", icon: DatabaseBackup } as const,
+      ]
     : baseLinks;
 
   const nav = (
