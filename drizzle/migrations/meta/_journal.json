@@ -36,6 +36,13 @@
       "when": 1791463324521,
       "tag": "0004_avatars_storage_policies",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1793678310780,
+      "tag": "0005_0005_backups_storage_policies",
+      "breakpoints": true
     }
   ]
 }
