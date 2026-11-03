@@ -51,7 +51,7 @@ export const Route = createFileRoute("/_authenticated/backup")({
 type BackupFile = {
   name: string;
   created_at: string | null;
-  metadata?: { size?: number } | null;
+  metadata?: { size?: number } | null | undefined;
 };
 
 function formatSize(bytes: number) {
@@ -169,14 +169,14 @@ function BackupPage() {
             <p className="px-2 py-4 text-sm text-muted-foreground">
               Не удалось получить список файлов. Обновите страницу.
             </p>
-          ) : files.data.length === 0 ? (
+          ) : !files.data?.length ? (
             <p className="px-2 py-4 text-sm text-muted-foreground">
               Копий пока нет. Нажмите «Создать копию» — файл появится здесь и будет храниться
               в аккаунте проекта.
             </p>
           ) : (
             <ul>
-              {files.data.map((file) => (
+              {(files.data ?? []).map((file) => (
                 <li
                   key={file.name}
                   className="flex flex-wrap items-center gap-3 border-b border-border/60 py-3 last:border-0"

@@ -92,7 +92,9 @@ CREATE TABLE reviews (
 `;
 
 /** Порядок и состав таблиц, которые попадают в резервную копию. */
-export const DUMP_TABLES: { name: string; columns: string[] }[] = [
+export type DumpTableName = "profiles" | "user_roles" | "events" | "registrations" | "reviews";
+
+export const DUMP_TABLES: { name: DumpTableName; columns: string[] }[] = [
   { name: "profiles", columns: ["id", "full_name", "avatar_url", "created_at"] },
   { name: "user_roles", columns: ["id", "user_id", "role", "created_at"] },
   {
