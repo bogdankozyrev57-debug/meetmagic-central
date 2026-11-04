@@ -176,6 +176,35 @@ export function buildDumpSql(tables: DumpTable[]): string {
   return `${DDL}\n${tables.map(insertBlock).join("\n")}\nSET FOREIGN_KEY_CHECKS=1;\n`;
 }
 
+/** Прочитать все таблицы привилегированным клиентом и собрать текст MySQL-копии. */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export async function collectDumpSql(admin: any): Promise<string> {
+  const tables: DumpTable[] = [];
+  for (const table of DUMP_TABLES) {
+    const { data, error } = await admin.from(table.name).select("*");
+    if (error) throw new Error(`Не удалось прочитать таблицу ${table.name}`);
+    tables.push({ ...table, rows: (data ?? []) as Record<string, unknown>[] });
+  }
+  return buildDumpSql(tables);
+}
+
+/**
+ * Ключ синхронизации для PHP-сервиса: показывается только администратору,
+ * чтобы вписать его в api-php/.env (SITE_SYNC_TOKEN).
+ */
+export const getPhpSyncSettings = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }): Promise<{ token: string }> => {
+    const { data, error } = await context.supabase
+      .from("user_roles")
+      .select("role")
+      .eq("user_id", context.userId)
+      .eq("role", "admin");
+    if (error) throw error;
+    if (!data?.length) throw new Error("Доступно только администраторам");
+    return { token: process.env.PHP_SYNC_TOKEN ?? "" };
+  });
+
 /** Имя файла копии с меткой времени: sbor-2026-11-03-0657.sql */
 export function backupFileName(at: Date): string {
   const pad = (n: number) => String(n).padStart(2, "0");
@@ -205,14 +234,7 @@ export const createBackup = createServerFn({ method: "POST" })
     // поэтому серверный клиент подключается уже после проверки роли.
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
-    const tables: DumpTable[] = [];
-    for (const table of DUMP_TABLES) {
-      const { data, error } = await supabaseAdmin.from(table.name).select("*");
-      if (error) throw new Error(`Не удалось прочитать таблицу ${table.name}`);
-      tables.push({ ...table, rows: (data ?? []) as unknown as Record<string, unknown>[] });
-    }
-
-    const dump = buildDumpSql(tables);
+    const dump = await collectDumpSql(supabaseAdmin);
     const bytes = new TextEncoder().encode(dump);
     const path = backupFileName(new Date());
 
