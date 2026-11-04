@@ -202,7 +202,7 @@ export const getPhpSyncSettings = createServerFn({ method: "GET" })
       .eq("role", "admin");
     if (error) throw error;
     if (!data?.length) throw new Error("Доступно только администраторам");
-    return { token: process.env.PHP_SYNC_TOKEN ?? "" };
+    return { token: process.env["PHP_SYNC_TOKEN"] ?? "" };
   });
 
 /** Имя файла копии с меткой времени: sbor-2026-11-03-0657.sql */
