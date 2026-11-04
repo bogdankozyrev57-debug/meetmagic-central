@@ -19,7 +19,7 @@ export const Route = createFileRoute("/api/public/sync-dump")({
   server: {
     handlers: {
       GET: async ({ request }) => {
-        const expected = process.env.PHP_SYNC_TOKEN ?? "";
+        const expected = process.env["PHP_SYNC_TOKEN"] ?? "";
         const given = (request.headers.get("authorization") ?? "").replace(/^Bearer\s+/i, "");
         if (!expected || !safeEqual(given, expected)) {
           return new Response("Неверный ключ синхронизации", { status: 401 });
