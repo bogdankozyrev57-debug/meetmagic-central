@@ -16,13 +16,13 @@ final class EventsController
 
         $sql = 'SELECT id, title, description, category, starts_at, ends_at, venue_name,
                        address, lat, lng, capacity, price, cover_url
-                  FROM public.events
+                  FROM events
                  WHERE is_published = true';
         $params = [];
 
         if ($search !== '') {
-            $sql .= ' AND (title ILIKE :search OR venue_name ILIKE :search)';
-            $params['search'] = '%' . $search . '%';
+            $sql .= ' AND (title LIKE :s1 OR venue_name LIKE :s2)';
+            $params['s1'] = $params['s2'] = '%' . $search . '%';
         }
         if ($category !== '') {
             $sql .= ' AND category = :category';
@@ -44,7 +44,7 @@ final class EventsController
         $event = Database::selectOne(
             'SELECT id, title, description, category, starts_at, ends_at, venue_name,
                     address, lat, lng, capacity, price, cover_url
-               FROM public.events
+               FROM events
               WHERE id = :id AND is_published = true',
             ['id' => $id]
         );
@@ -55,8 +55,8 @@ final class EventsController
         }
 
         $rating = Database::selectOne(
-            'SELECT ROUND(AVG(rating)::numeric, 2) AS average, COUNT(*) AS total
-               FROM public.reviews WHERE event_id = :id',
+            'SELECT ROUND(AVG(rating), 2) AS average, COUNT(*) AS total
+               FROM reviews WHERE event_id = :id',
             ['id' => $id]
         );
 
@@ -77,8 +77,8 @@ final class EventsController
 
         $rows = Database::select(
             'SELECT r.id, r.rating, r.comment, r.created_at, COALESCE(p.full_name, :anon) AS author
-               FROM public.reviews r
-               LEFT JOIN public.profiles p ON p.id = r.user_id
+               FROM reviews r
+               LEFT JOIN profiles p ON p.id = r.user_id
               WHERE r.event_id = :id
               ORDER BY r.created_at DESC
               LIMIT 100',
@@ -100,7 +100,7 @@ final class EventsController
         $row = Database::selectOne(
             'SELECT COUNT(*) AS registered,
                     COUNT(checked_in_at) AS attended
-               FROM public.registrations WHERE event_id = :id',
+               FROM registrations WHERE event_id = :id',
             ['id' => $id]
         );
 

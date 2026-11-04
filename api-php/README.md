@@ -1,9 +1,18 @@
 # PHP REST-сервис «Сбор»
 
-Дополнительный публичный REST-слой на PHP поверх той же базы PostgreSQL.
+REST-сервис на PHP поверх базы MySQL «sbor» — той же, что открывается в phpMyAdmin.
 Используется для отчётов, выгрузок и интеграций со сторонними системами.
 
-## Запуск
+## Запуск через XAMPP + phpMyAdmin
+
+1. В XAMPP включить Apache и MySQL.
+2. http://localhost/phpmyadmin → «Импорт» → файл `database/sbor_mysql.sql` (или свежая копия со страницы «Копии») → «Вперёд». Появится база `sbor`.
+3. Скопировать `api-php/.env.example` в `api-php/.env` (там уже указан MySQL XAMPP: root без пароля).
+4. Запустить: `php -S localhost:8000 -t api-php/public` и открыть http://localhost:8000/api/events.
+
+Всё, что меняет PHP-сервис (например, отметки прохода), сразу видно в phpMyAdmin.
+
+## Запуск (общий)
 
 ```bash
 cp api-php/.env.example api-php/.env   # заполнить параметры подключения
@@ -14,7 +23,7 @@ php -S 0.0.0.0:8000 -t api-php/public
 
 | Имя | Описание |
 | --- | --- |
-| `DB_DSN` | DSN подключения, например `pgsql:host=...;port=5432;dbname=postgres;sslmode=require` |
+| `DB_DSN` | DSN подключения, например `mysql:host=127.0.0.1;port=3306;dbname=sbor;charset=utf8mb4` (поддерживается и `pgsql:`) |
 | `DB_USER` | Пользователь БД |
 | `DB_PASSWORD` | Пароль |
 | `API_TOKEN` | Токен организатора для защищённых методов (заголовок `Authorization: Bearer ...`) |
