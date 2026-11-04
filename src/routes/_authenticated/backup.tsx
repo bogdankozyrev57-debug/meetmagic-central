@@ -19,7 +19,7 @@ import { PageShell } from "@/components/PageShell";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
-import { BACKUP_BUCKET, createBackup } from "@/lib/backup.functions";
+import { BACKUP_BUCKET, createBackup, getPhpSyncSettings } from "@/lib/backup.functions";
 import { formatDateTime } from "@/lib/format";
 import { getMyRoles } from "@/lib/roles.functions";
 
@@ -162,6 +162,8 @@ function BackupPage() {
           </Button>
         </div>
 
+        <PhpSyncPanel />
+
         <div className="mt-8 card-surface px-4 py-2">
           {files.isLoading ? (
             <p className="px-2 py-4 text-sm text-muted-foreground">Загружаем список файлов…</p>
@@ -251,5 +253,31 @@ function BackupPage() {
         </p>
       </div>
     </PageShell>
+  );
+}
+
+/** Ключ связи сайта с PHP/phpMyAdmin: вписывается в api-php/.env. */
+function PhpSyncPanel() {
+  const [shown, setShown] = useState(false);
+  const sync = useQuery({ queryKey: ["php-sync"], queryFn: () => getPhpSyncSettings() });
+  const origin = typeof window !== "undefined" ? window.location.origin : "";
+  return (
+    <div className="mt-8 card-surface space-y-2 p-5 text-sm">
+      <h2 className="font-display text-lg font-semibold">Связь с phpMyAdmin</h2>
+      <p className="text-muted-foreground">
+        Впишите эти строки в файл api-php/.env и откройте http://localhost:8000/sync.php — база
+        «sbor» в phpMyAdmin обновится данными сайта.
+      </p>
+      {sync.isError ? (
+        <p className="text-destructive">Не удалось получить ключ.</p>
+      ) : (
+        <pre className="overflow-x-auto rounded-md bg-muted p-3 text-xs">
+          {`SITE_URL="${origin}"\nSITE_SYNC_TOKEN="${shown ? (sync.data?.token ?? "…") : "••••••••"}"`}
+        </pre>
+      )}
+      <Button variant="outline" size="sm" onClick={() => setShown((v) => !v)}>
+        {shown ? "Скрыть ключ" : "Показать ключ"}
+      </Button>
+    </div>
   );
 }

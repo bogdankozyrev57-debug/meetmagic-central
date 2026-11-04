@@ -10,6 +10,8 @@ REST-сервис на PHP поверх базы MySQL «sbor» — той же,
 3. Скопировать `api-php/.env.example` в `api-php/.env` (там уже указан MySQL XAMPP: root без пароля).
 4. Запустить: `php -S localhost:8000 -t api-php/public` и открыть http://localhost:8000/api/events.
 
+5. Связь с сайтом: на странице сайта «Копии» нажмите «Показать ключ», впишите SITE_URL и SITE_SYNC_TOKEN в `.env` и откройте http://localhost:8000/sync.php — база в phpMyAdmin заменится текущими данными сайта. Повторяйте при каждом открытии.
+
 Всё, что меняет PHP-сервис (например, отметки прохода), сразу видно в phpMyAdmin.
 
 ## Запуск (общий)
