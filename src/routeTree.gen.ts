@@ -21,6 +21,7 @@ import { Route as AuthenticatedProfileRouteImport } from './routes/_authenticate
 import { Route as AuthenticatedTicketsRouteImport } from './routes/_authenticated/tickets'
 import { Route as EventsIdRouteImport } from './routes/events.$id'
 import { Route as AuthenticatedOrganizerIdRouteImport } from './routes/_authenticated/organizer.$id'
+import { Route as ApiPublicSyncDumpRouteImport } from './routes/api/public/sync-dump'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -82,6 +83,11 @@ const AuthenticatedOrganizerIdRoute =
     path: '/$id',
     getParentRoute: () => AuthenticatedOrganizerRoute,
   } as any)
+const ApiPublicSyncDumpRoute = ApiPublicSyncDumpRouteImport.update({
+  id: '/api/public/sync-dump',
+  path: '/api/public/sync-dump',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -95,6 +101,7 @@ export interface FileRoutesByFullPath {
   '/tickets': typeof AuthenticatedTicketsRoute
   '/events/$id': typeof EventsIdRoute
   '/organizer/$id': typeof AuthenticatedOrganizerIdRoute
+  '/api/public/sync-dump': typeof ApiPublicSyncDumpRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -108,6 +115,7 @@ export interface FileRoutesByTo {
   '/tickets': typeof AuthenticatedTicketsRoute
   '/events/$id': typeof EventsIdRoute
   '/organizer/$id': typeof AuthenticatedOrganizerIdRoute
+  '/api/public/sync-dump': typeof ApiPublicSyncDumpRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -123,6 +131,7 @@ export interface FileRoutesById {
   '/_authenticated/tickets': typeof AuthenticatedTicketsRoute
   '/events/$id': typeof EventsIdRoute
   '/_authenticated/organizer/$id': typeof AuthenticatedOrganizerIdRoute
+  '/api/public/sync-dump': typeof ApiPublicSyncDumpRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -138,6 +147,7 @@ export interface FileRouteTypes {
     | '/tickets'
     | '/events/$id'
     | '/organizer/$id'
+    | '/api/public/sync-dump'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -151,6 +161,7 @@ export interface FileRouteTypes {
     | '/tickets'
     | '/events/$id'
     | '/organizer/$id'
+    | '/api/public/sync-dump'
   id:
     | '__root__'
     | '/'
@@ -165,6 +176,7 @@ export interface FileRouteTypes {
     | '/_authenticated/tickets'
     | '/events/$id'
     | '/_authenticated/organizer/$id'
+    | '/api/public/sync-dump'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -174,6 +186,7 @@ export interface RootRouteChildren {
   AuthRoute: typeof AuthRoute
   DocsRoute: typeof DocsRoute
   EventsIdRoute: typeof EventsIdRoute
+  ApiPublicSyncDumpRoute: typeof ApiPublicSyncDumpRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -262,6 +275,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedOrganizerIdRouteImport
       parentRoute: typeof AuthenticatedOrganizerRoute
     }
+    '/api/public/sync-dump': {
+      id: '/api/public/sync-dump'
+      path: '/api/public/sync-dump'
+      fullPath: '/api/public/sync-dump'
+      preLoaderRoute: typeof ApiPublicSyncDumpRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -305,6 +325,7 @@ const rootRouteChildren: RootRouteChildren = {
   AuthRoute: AuthRoute,
   DocsRoute: DocsRoute,
   EventsIdRoute: EventsIdRoute,
+  ApiPublicSyncDumpRoute: ApiPublicSyncDumpRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
