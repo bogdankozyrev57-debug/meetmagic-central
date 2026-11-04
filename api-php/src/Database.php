@@ -9,7 +9,7 @@ use PDOException;
 use RuntimeException;
 
 /**
- * Подключение к PostgreSQL. Только подготовленные выражения — защита от SQL-инъекций.
+ * Подключение к MySQL/MariaDB (XAMPP, phpMyAdmin) или PostgreSQL — по DB_DSN. Только подготовленные выражения — защита от SQL-инъекций.
  */
 final class Database
 {
@@ -34,12 +34,22 @@ final class Database
                 PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
                 PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
                 PDO::ATTR_EMULATE_PREPARES => false,
+                PDO::ATTR_STRINGIFY_FETCHES => false,
             ]);
         } catch (PDOException $e) {
             throw new RuntimeException('Не удалось подключиться к базе данных', 0, $e);
         }
 
         return self::$pdo;
+    }
+
+    /** SQL-выражение «дата -> 'ГГГГ-ММ-ДД ЧЧ:ММ'» для текущей СУБД. */
+    public static function formatDateTime(string $column): string
+    {
+        $driver = self::connection()->getAttribute(PDO::ATTR_DRIVER_NAME);
+        return $driver === 'mysql'
+            ? "DATE_FORMAT($column, '%Y-%m-%d %H:%i')"
+            : "to_char($column, 'YYYY-MM-DD HH24:MI')";
     }
 
     /**

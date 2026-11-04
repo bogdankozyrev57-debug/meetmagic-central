@@ -22,9 +22,9 @@ final class CheckinController
         $ticket = Database::selectOne(
             'SELECT r.id, r.checked_in_at, e.title,
                     COALESCE(p.full_name, :anon) AS attendee
-               FROM public.registrations r
-               JOIN public.events e ON e.id = r.event_id
-               LEFT JOIN public.profiles p ON p.id = r.user_id
+               FROM registrations r
+               JOIN events e ON e.id = r.event_id
+               LEFT JOIN profiles p ON p.id = r.user_id
               WHERE r.ticket_code = :code',
             ['code' => $code, 'anon' => 'Участник']
         );
@@ -45,7 +45,7 @@ final class CheckinController
         }
 
         Database::execute(
-            "UPDATE public.registrations
+            "UPDATE registrations
                 SET checked_in_at = now(), status = 'attended'
               WHERE id = :id",
             ['id' => $ticket['id']]
@@ -65,11 +65,11 @@ final class CheckinController
 
         $rows = Database::select(
             "SELECT e.title AS event,
-                    to_char(e.starts_at, 'YYYY-MM-DD HH24:MI') AS starts_at,
+                    " . Database::formatDateTime('e.starts_at') . " AS starts_at,
                     COUNT(r.id) AS registered,
                     COUNT(r.checked_in_at) AS attended
-               FROM public.events e
-               LEFT JOIN public.registrations r ON r.event_id = e.id
+               FROM events e
+               LEFT JOIN registrations r ON r.event_id = e.id
               GROUP BY e.id, e.title, e.starts_at
               ORDER BY e.starts_at DESC"
         );
