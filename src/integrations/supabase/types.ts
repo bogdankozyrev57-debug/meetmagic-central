@@ -204,12 +204,68 @@ export type Database = {
           registration_id: string
         }[]
       }
+      event_stats: {
+        Args: { _event_id: string }
+        Returns: {
+          avg_rating: number
+          checked_in_count: number
+          free_seats: number
+          registered_count: number
+          reviews_count: number
+        }[]
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
           _user_id: string
         }
         Returns: boolean
+      }
+      register_for_event: {
+        Args: { _event_id: string }
+        Returns: {
+          checked_in_at: string | null
+          created_at: string
+          event_id: string
+          id: string
+          status: string
+          ticket_code: string
+          user_id: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "registrations"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      search_events: {
+        Args: { _query: string }
+        Returns: {
+          address: string
+          capacity: number
+          category: string
+          cover_url: string | null
+          created_at: string
+          description: string
+          ends_at: string | null
+          id: string
+          is_published: boolean
+          lat: number | null
+          lng: number | null
+          organizer_id: string | null
+          price: number
+          starts_at: string
+          title: string
+          updated_at: string
+          venue_name: string
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "events"
+          isOneToOne: false
+          isSetofReturn: true
+        }
       }
     }
     Enums: {

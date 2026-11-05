@@ -57,6 +57,13 @@
       "when": 1793783092194,
       "tag": "0007_add_second_admin_email",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1793892985980,
+      "tag": "0008_indexes_and_event_functions",
+      "breakpoints": true
     }
   ]
 }
