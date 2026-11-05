@@ -14,6 +14,39 @@ export type Database = {
   }
   public: {
     Tables: {
+      error_logs: {
+        Row: {
+          created_at: string
+          id: string
+          message: string
+          source: string
+          stack: string | null
+          url: string | null
+          user_agent: string | null
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          message: string
+          source?: string
+          stack?: string | null
+          url?: string | null
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          message?: string
+          source?: string
+          stack?: string | null
+          url?: string | null
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       events: {
         Row: {
           address: string

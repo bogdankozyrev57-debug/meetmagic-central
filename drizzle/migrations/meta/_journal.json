@@ -64,6 +64,13 @@
       "when": 1793892985980,
       "tag": "0008_indexes_and_event_functions",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1793893300411,
+      "tag": "0009_error_logs_table",
+      "breakpoints": true
     }
   ]
 }
