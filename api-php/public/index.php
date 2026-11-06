@@ -21,6 +21,11 @@ spl_autoload_register(static function (string $class): void {
 use Sbor\CheckinController;
 use Sbor\EventsController;
 use Sbor\Response;
+use Sbor\Sync;
+
+// Автосинхронизация: если база устарела (новые пользователи/события на сайте),
+// обновление запускается в фоне и не задерживает ответ. Интервал — SYNC_INTERVAL_MINUTES.
+Sync::runIfStale();
 
 header('Access-Control-Allow-Origin: *');
 header('Access-Control-Allow-Headers: Authorization, Content-Type');
