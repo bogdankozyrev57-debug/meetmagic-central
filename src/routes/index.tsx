@@ -37,9 +37,18 @@ function Index() {
   const [query, setQuery] = useState("");
   const [category, setCategory] = useState<string | null>(null);
 
+  const term = query.trim();
+
+  // Поиск идёт через специальную функцию базы search_events (ищет по названию,
+  // описанию, площадке и адресу среди опубликованных); без запроса — вся афиша.
   const { data: events, isLoading } = useQuery({
-    queryKey: ["events", "published"],
+    queryKey: ["events", "published", term],
     queryFn: async () => {
+      if (term) {
+        const { data, error } = await supabase.rpc("search_events", { _query: term });
+        if (error) throw error;
+        return (data ?? []) as unknown as EventRow[];
+      }
       const { data, error } = await supabase
         .from("events")
         .select("*")
