@@ -73,7 +73,7 @@ type AdminEvent = {
 };
 
 function AdminPage() {
-  const [tab, setTab] = useState<"events" | "users">("events");
+  const [tab, setTab] = useState<"events" | "users" | "logs">("events");
 
   return (
     <PageShell>
@@ -82,8 +82,9 @@ function AdminPage() {
         <div className="mt-4 flex gap-2">
           <Button variant={tab === "events" ? "default" : "outline"} onClick={() => setTab("events")}>Мероприятия</Button>
           <Button variant={tab === "users" ? "default" : "outline"} onClick={() => setTab("users")}>Пользователи</Button>
+          <Button variant={tab === "logs" ? "default" : "outline"} onClick={() => setTab("logs")}>Журнал</Button>
         </div>
-        {tab === "events" ? <EventsAdmin /> : <UsersAdmin />}
+        {tab === "events" ? <EventsAdmin /> : tab === "users" ? <UsersAdmin /> : <ErrorLogsAdmin />}
       </div>
     </PageShell>
   );
