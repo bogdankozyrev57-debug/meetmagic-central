@@ -73,7 +73,7 @@ type AdminEvent = {
 };
 
 function AdminPage() {
-  const [tab, setTab] = useState<"events" | "users">("events");
+  const [tab, setTab] = useState<"events" | "users" | "logs">("events");
 
   return (
     <PageShell>
@@ -82,8 +82,9 @@ function AdminPage() {
         <div className="mt-4 flex gap-2">
           <Button variant={tab === "events" ? "default" : "outline"} onClick={() => setTab("events")}>Мероприятия</Button>
           <Button variant={tab === "users" ? "default" : "outline"} onClick={() => setTab("users")}>Пользователи</Button>
+          <Button variant={tab === "logs" ? "default" : "outline"} onClick={() => setTab("logs")}>Журнал</Button>
         </div>
-        {tab === "events" ? <EventsAdmin /> : <UsersAdmin />}
+        {tab === "events" ? <EventsAdmin /> : tab === "users" ? <UsersAdmin /> : <ErrorLogsAdmin />}
       </div>
     </PageShell>
   );
@@ -382,6 +383,92 @@ function UsersAdmin() {
                       </Button>
                     </>
                   )}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+      <div className="mt-4 flex items-center justify-between text-sm">
+        <span className="text-muted-foreground">Всего: {data?.total ?? 0} · страница {page + 1} из {pages}</span>
+        <div className="flex gap-2">
+          <Button size="sm" variant="outline" disabled={page === 0} onClick={() => setPage(page - 1)}>Назад</Button>
+          <Button size="sm" variant="outline" disabled={page + 1 >= pages} onClick={() => setPage(page + 1)}>Вперёд</Button>
+        </div>
+      </div>
+    </>
+  );
+}
+
+/* ---------------- Журнал ошибок ---------------- */
+type ErrorLogRow = {
+  id: string; created_at: string; source: string; message: string;
+  stack: string | null; url: string | null; user_agent: string | null;
+};
+
+/** Журнал ошибок приложения: сюда пишет перехватчик из __root.tsx (таблица error_logs). */
+function ErrorLogsAdmin() {
+  const queryClient = useQueryClient();
+  const [page, setPage] = useState(0);
+  const [openId, setOpenId] = useState<string | null>(null);
+
+  const { data, isLoading, error } = useQuery({
+    queryKey: ["admin-error-logs", page],
+    queryFn: async () => {
+      const { data, error, count } = await supabase
+        .from("error_logs")
+        .select("id, created_at, source, message, stack, url, user_agent", { count: "exact" })
+        .order("created_at", { ascending: false })
+        .range(page * PAGE_SIZE, page * PAGE_SIZE + PAGE_SIZE - 1);
+      if (error) throw error;
+      return { rows: (data ?? []) as ErrorLogRow[], total: count ?? 0 };
+    },
+  });
+
+  const rows = data?.rows ?? [];
+  const pages = Math.max(1, Math.ceil((data?.total ?? 0) / PAGE_SIZE));
+
+  async function remove(id: string) {
+    try {
+      const { error } = await supabase.from("error_logs").delete().eq("id", id);
+      if (error) throw error;
+      toast.success("Запись удалена");
+      queryClient.invalidateQueries({ queryKey: ["admin-error-logs"] });
+    } catch (err) { toast.error(describeDbError(err)); }
+  }
+
+  return (
+    <>
+      <p className="mt-6 text-sm text-muted-foreground">
+        Ошибки, которые перехватило приложение у посетителей: сбои страниц, необработанные исключения.
+      </p>
+      <div className="card-surface mt-4 overflow-x-auto">
+        <table className="w-full text-sm">
+          <thead className="text-left text-muted-foreground">
+            <tr><th className="p-3">Время</th><th className="p-3">Источник</th><th className="p-3">Ошибка</th><th className="p-3" /></tr>
+          </thead>
+          <tbody>
+            {isLoading && <tr><td colSpan={4} className="p-6 text-center text-muted-foreground">Загрузка…</td></tr>}
+            {error && <tr><td colSpan={4} className="p-6 text-center text-destructive">{describeDbError(error)}</td></tr>}
+            {!isLoading && !error && rows.length === 0 && <tr><td colSpan={4} className="p-6 text-center text-muted-foreground">Ошибок нет — всё работает стабильно</td></tr>}
+            {rows.map((row) => (
+              <tr key={row.id} className="border-t border-border align-top">
+                <td className="whitespace-nowrap p-3">{formatDateTime(row.created_at)}</td>
+                <td className="p-3"><Badge variant="secondary">{row.source}</Badge></td>
+                <td className="max-w-md p-3">
+                  <button type="button" className="text-left font-medium hover:text-primary" onClick={() => setOpenId(openId === row.id ? null : row.id)}>
+                    {row.message}
+                  </button>
+                  {openId === row.id && (
+                    <div className="mt-2 space-y-1 text-xs text-muted-foreground">
+                      {row.url && <p>Страница: {row.url}</p>}
+                      {row.user_agent && <p>Браузер: {row.user_agent}</p>}
+                      {row.stack && <pre className="max-h-48 overflow-auto whitespace-pre-wrap rounded-md bg-muted p-2">{row.stack}</pre>}
+                    </div>
+                  )}
+                </td>
+                <td className="whitespace-nowrap p-3 text-right">
+                  <Button size="sm" variant="ghost" className="text-destructive" onClick={() => remove(row.id)}>Удалить</Button>
                 </td>
               </tr>
             ))}

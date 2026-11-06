@@ -91,8 +91,20 @@ function EventPage() {
     },
   });
 
+  // Свободные места и статистика — специальная функция базы event_stats
+  const statsQuery = useQuery({
+    queryKey: ["event-stats", id],
+    queryFn: async () => {
+      const { data, error } = await supabase.rpc("event_stats", { _event_id: id });
+      if (error) throw error;
+      return data?.[0] ?? null;
+    },
+  });
+
   const event = eventQuery.data;
   const registration = registrationQuery.data;
+  const stats = statsQuery.data;
+  const freeSeats = stats?.free_seats ?? null;
   const reviews = reviewsQuery.data ?? [];
   const avgRating =
     reviews.length > 0
@@ -105,16 +117,21 @@ function EventPage() {
       return;
     }
     setBusy(true);
-    const { error } = await supabase
-      .from("registrations")
-      .insert({ event_id: id, user_id: user.id });
+    // Регистрация через специальную функцию базы register_for_event:
+    // она атомарно проверяет свободные места и повторную запись.
+    const { error } = await supabase.rpc("register_for_event", { _event_id: id });
     setBusy(false);
     if (error) {
-      toast.error("Не удалось зарегистрироваться");
+      toast.error(
+        error.message.includes("мест")
+          ? "Свободных мест не осталось"
+          : "Не удалось зарегистрироваться",
+      );
       return;
     }
     toast.success("Вы зарегистрированы! QR-билет готов.");
     queryClient.invalidateQueries({ queryKey: ["registration", id, user.id] });
+    queryClient.invalidateQueries({ queryKey: ["event-stats", id] });
   }
 
   async function handleCancel() {
@@ -128,6 +145,7 @@ function EventPage() {
     }
     toast.success("Регистрация отменена");
     queryClient.invalidateQueries({ queryKey: ["registration", id, user?.id] });
+    queryClient.invalidateQueries({ queryKey: ["event-stats", id] });
   }
 
   async function handleReview(e: React.FormEvent) {
@@ -305,10 +323,21 @@ function EventPage() {
                 </Button>
               </div>
             ) : (
-              <Button className="mt-4 w-full" onClick={handleRegister} disabled={busy}>
-                <Ticket className="size-4" />
-                {user ? "Зарегистрироваться" : "Войти и зарегистрироваться"}
-              </Button>
+              <>
+                {freeSeats !== null && (
+                  <p className="mt-3 text-sm text-muted-foreground">
+                    {freeSeats > 0 ? (
+                      <>Свободно мест: <span className="font-semibold text-foreground">{freeSeats}</span> из {event.capacity}</>
+                    ) : (
+                      <span className="font-semibold text-destructive">Свободных мест нет</span>
+                    )}
+                  </p>
+                )}
+                <Button className="mt-4 w-full" onClick={handleRegister} disabled={busy || freeSeats === 0}>
+                  <Ticket className="size-4" />
+                  {freeSeats === 0 ? "Мест нет" : user ? "Зарегистрироваться" : "Войти и зарегистрироваться"}
+                </Button>
+              </>
             )}
 
             <p className="mt-4 text-xs text-muted-foreground">
