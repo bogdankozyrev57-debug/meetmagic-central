@@ -11,7 +11,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
-import { Pencil, Plus, Trash2 } from "lucide-react";
+import { MapPin, Pencil, Plus, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 
 import { Badge } from "@/components/ui/badge";
@@ -43,6 +43,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth";
 import { formatDateTime } from "@/lib/format";
 import { CATEGORIES, type EventRow } from "@/lib/events";
+import { geocodeAddress } from "@/lib/geocode.functions";
 import {
   describeDbError,
   validateEventForm,
@@ -96,6 +97,9 @@ function OrganizerPage() {
   const [showForm, setShowForm] = useState(false);
   const [busy, setBusy] = useState(false);
   const [toDelete, setToDelete] = useState<EventRow | null>(null);
+  // Координаты с кнопки «Определить координаты» (геокодирование адреса через OpenStreetMap)
+  const [coords, setCoords] = useState<{ lat: number; lng: number } | null>(null);
+  const [geoBusy, setGeoBusy] = useState(false);
 
   // R — чтение
   const { data, isLoading, error: loadError, refetch } = useQuery({
