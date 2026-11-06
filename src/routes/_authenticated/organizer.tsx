@@ -125,11 +125,13 @@ function OrganizerPage() {
     setEditingId(null);
     setForm(emptyForm);
     setErrors({});
+    setCoords(null);
     setShowForm(true);
   }
 
   function openEdit(event: EventRow) {
     setEditingId(event.id);
+    setCoords(event.lat != null && event.lng != null ? { lat: event.lat, lng: event.lng } : null);
     setForm({
       title: event.title,
       description: event.description,
@@ -152,6 +154,31 @@ function OrganizerPage() {
     setShowForm(false);
     setEditingId(null);
     setErrors({});
+    setCoords(null);
+  }
+
+  // Внешнее API: по адресу находит координаты через OpenStreetMap (Nominatim),
+  // они сохраняются в мероприятие и показываются картой на его странице.
+  async function handleGeocode() {
+    const address = form.address.trim();
+    if (!address) {
+      toast.error("Сначала укажите адрес");
+      return;
+    }
+    setGeoBusy(true);
+    try {
+      const result = await geocodeAddress({ data: { address } });
+      if (!result) {
+        toast.error("Адрес не найден. Уточните город и улицу.");
+        return;
+      }
+      setCoords({ lat: result.lat, lng: result.lng });
+      toast.success("Координаты определены");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Сервис карт недоступен");
+    } finally {
+      setGeoBusy(false);
+    }
   }
 
   // C / U — создание или обновление
@@ -164,7 +191,12 @@ function OrganizerPage() {
       toast.error("Проверьте поля формы");
       return;
     }
-    const payload = { ...valid, starts_at: new Date(valid.starts_at).toISOString() };
+    const payload = {
+      ...valid,
+      starts_at: new Date(valid.starts_at).toISOString(),
+      lat: coords?.lat ?? null,
+      lng: coords?.lng ?? null,
+    };
 
     setBusy(true);
     try {
@@ -286,6 +318,17 @@ function OrganizerPage() {
               <Input id="address" value={form.address}
                 onChange={(e) => set("address", e.target.value)} />
               {fieldError("address")}
+              <div className="flex flex-wrap items-center gap-2 pt-1">
+                <Button type="button" variant="outline" size="sm" onClick={handleGeocode} disabled={geoBusy}>
+                  <MapPin className="size-4" />
+                  {geoBusy ? "Определяю…" : "Определить координаты"}
+                </Button>
+                {coords && (
+                  <span className="text-xs text-muted-foreground">
+                    {coords.lat.toFixed(5)}, {coords.lng.toFixed(5)} — на странице появится карта
+                  </span>
+                )}
+              </div>
             </div>
             <div className="space-y-2">
               <Label htmlFor="capacity">Вместимость *</Label>
