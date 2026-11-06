@@ -12,6 +12,7 @@ import { useEffect, type ReactNode } from "react";
 
 import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
+import { reportAppError } from "../lib/error-log";
 import { Toaster } from "@/components/ui/sonner";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -42,6 +43,7 @@ function ErrorComponent({ error, reset }: ErrorComponentProps) {
   const router = useRouter();
   useEffect(() => {
     reportLovableError(error, { boundary: "tanstack_root_error_component" });
+    reportAppError(error, "error-boundary");
   }, [error]);
 
   return (
@@ -123,6 +125,21 @@ function RootShell({ children }: { children: ReactNode }) {
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
   const router = useRouter();
+
+  // Глобальный перехват ошибок: всё, что не поймали обработчики React,
+  // уходит в журнал error_logs (вкладка «Журнал» в админ-панели).
+  useEffect(() => {
+    const onError = (event: ErrorEvent) =>
+      reportAppError(event.error ?? event.message, "window.onerror");
+    const onRejection = (event: PromiseRejectionEvent) =>
+      reportAppError(event.reason, "unhandledrejection");
+    window.addEventListener("error", onError);
+    window.addEventListener("unhandledrejection", onRejection);
+    return () => {
+      window.removeEventListener("error", onError);
+      window.removeEventListener("unhandledrejection", onRejection);
+    };
+  }, []);
 
   useEffect(() => {
     const {
